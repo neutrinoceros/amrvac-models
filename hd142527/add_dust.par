@@ -1,0 +1,42 @@
+!===========================
+! add dust (2D case)
+!===========================
+
+
+&hd_list
+  hd_dust = .true.
+/
+
+&dust_list
+  dust_n_species = 2
+  gas_mu = 2d0
+  dust_temperature = 0d0
+  dust_min_rho = 1d-15
+  dust_method = 'none'    !use 'Kwok' for coupling
+/
+
+&usr_dust_list
+  gas2dust_ratio = 1d2
+  intrinsic_grain_density = 1d0  ! 1g/cm^3
+  grain_size = 1d0, 1d-1         ! 1cm
+/
+
+&filelist
+  base_filename = 'dusty_'
+/
+
+&boundlist
+  nghostcells = 2
+
+  !> radial boundaries
+  typeboundary_min1 = 'special','cont','special', 6*'cont'
+  typeboundary_max1 = 'special','noinflow','special', 6*'cont'
+
+  !> azimuthal boundaries
+  typeboundary_min2 = 9*'periodic'
+  typeboundary_max2 = 9*'periodic'
+/
+
+&methodlist
+    flux_scheme = 20*'hll' ! because hllc with dust_method 'Kwok' and 'none' is broken
+/
