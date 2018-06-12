@@ -1,0 +1,86 @@
+! ======================================
+! trigger RWI at the edge of a cavity
+! in a transistion disk
+!
+! physical parameters are adjusted to
+! HD 142527, but we don't simulate the
+! eccentric binary here.
+! ======================================
+
+&disk_list
+    central_mass = 1.8
+/
+
+&usr_list
+    density_slope = -0.75
+    cavity_radius = 140.0
+    cavity_width = 12.0
+    rhozero = 5e-06
+    rhomin = 1e-13
+    aspect_ratio = 0.02
+    wk_amp = 50d0
+/
+
+&perturbation_list
+    pert_noise = .true.
+    pert_moment = 1
+    pert_amp = 0.001
+/
+
+! -----------------------------------------------------------------
+
+&meshlist
+    refine_max_level = 1
+    xprobmin1 = 70.0
+    xprobmax1 = 450.0
+    domain_nx1 = 512
+    block_nx1 = 128
+    xprobmin2 = 0.0
+    xprobmax2 = 1.0
+    domain_nx2 = 128
+    block_nx2 = 64
+/
+
+&boundlist
+    nghostcells = 2
+    typeboundary_min1 = 'special', 'cont', 'special'
+    typeboundary_max1 = 'special', 'noinflow', 'special'
+    typeboundary_min2 = 'periodic', 'periodic', 'periodic'
+    typeboundary_max2 = 'periodic', 'periodic', 'periodic'
+/
+
+&filelist
+    base_filename = 'hd142527_'
+    convert_type = 'vtuBCCmpi'
+    autoconvert = .true.
+    nocartesian = .true.
+/
+
+&hd_list
+    hd_gamma = 1.4
+    hd_energy = .false.
+    hd_gravity = .true.
+    hd_dust = .false.
+/
+
+&savelist
+    ! in this simulation, 6156.24d0 is 1 orbital period in code units
+    ! for a test particle at r=120, where the cavity is located.
+
+    itsave(1, 1) = 0
+    itsave(1, 2) = 0
+    dtsave_log = 6156d-1 ! 0.1 orbit at r=140
+    dtsave_dat = 6156d0  ! 1.0 orbit at r=140
+/
+
+&stoplist
+    time_max = 1837680d0 ! 30 orbit at r=140
+/
+
+&methodlist
+    small_density = 1e-15
+    time_integrator = 'twostep'
+    flux_scheme = 20*'hllc'
+    limiter = 20*'koren'
+    gradient_limiter = 20*'koren'
+/
