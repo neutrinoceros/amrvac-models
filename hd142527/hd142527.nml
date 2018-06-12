@@ -13,11 +13,11 @@
 
 &usr_list
     density_slope = -0.75
-    cavity_radius = 140.0
-    cavity_width = 12.0
+    cavity_radius = 157.0  ! in au, with d=157pc (Gaia 2016) and angular width ~2''
+    cavity_width = 12.0    ! au, constrained by Rayleigh and Lovelace criteria
     rhozero = 5e-06
     rhomin = 1e-13
-    aspect_ratio = 0.02
+    aspect_ratio = 0.02    ! constrained by Rayleigh criterion
     wk_amp = 50d0
 /
 
