@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 '''Addition to test suite : get verbatim comments and graphical check ups associated with tests
 '''
 from os import mkdir
@@ -6,9 +7,19 @@ import matplotlib.pyplot as plt
 
 from test_disk_physics import *
 
-out = pathlib.Path(__file__).parent/'diagnostic_graphs/'
-if not out.exists():
+from argparse import ArgumentParser
+
+parser = ArgumentParser()
+parser.add_argument('-d', dest='output_dir', type=str, help='select output directory')
+args = parser.parse_args()
+
+
+out = pathlib.Path(args.output_dir)
+if out.exists():
+    raise FileExistsError(out)
+else:
     mkdir(out)
+conf.write(out/'conf.nml')
 
 center = my_model.get_value('r0')
 sig = my_model.get_value('sig')

@@ -38,7 +38,7 @@ class DTDisk(DDisk, TDisk):
     '''Simply merge properties from DustyDisk and TransitionDisk'''
     pass
 
-conf = merge_configs([here/'hd142527.nml', here/'add_dust2D.nml'])
+conf = merge_configs([here/'hd142527.nml', here/'add_dust.par'])
 
 r_range = np.linspace(conf['meshlist']['xprobmin1'], conf['meshlist']['xprobmax1'], num=100)
 usr_list = conf['usr_list']
@@ -53,7 +53,7 @@ my_subs = {
     DTDisk.gamma         : conf['hd_list']['hd_gamma'],
     DTDisk.aspect_ratio0 : usr_list['aspect_ratio'],
     DTDisk.eta           : h2_viscosity_code,
-    DTDisk.sp            : conf['usr_dust_list']['grain_size'] / ref_length,
+    DTDisk.sp            : max(conf['usr_dust_list']['grain_size']) / ref_length,
     DTDisk.rhop          : conf['usr_dust_list']['intrinsic_grain_density'] / Msun * ref_length**3
 }
 
