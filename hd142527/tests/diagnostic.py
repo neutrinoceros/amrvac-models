@@ -113,6 +113,10 @@ xlims = ax.get_xlim()
 for n in [1,4]:
     ax.plot(np.linspace(*xlims,2), np.ones(2)*10**(-n)/ref_length, ls='--', c='k', lw=0.5)
 ax.set_xlim(*xlims)
+ylims = ax.get_ylim()
+ax.fill_between(r_range, ylims[1]*np.ones(len(lups)), lups, facecolor='red', alpha=0.2)
+ax.set_ylim(*ylims)
+ax.set_xlim(r_range.min(), r_range.max())
 
 #twin axis with physical unit
 axb = ax.twinx()
@@ -120,8 +124,7 @@ axb.set_yscale('log')
 axb.set_ylim(*[y*ref_length for y in ax.get_ylim()])
 axb.set_ylabel('$s_{p,max}$ (cm)')
 
-fig.suptitle(r'''Maximum particule size allowed
-for $\rho_p=%.1f$g/cm$^3$''' % conf['usr_dust_list']['intrinsic_grain_density'])
+fig.suptitle(r'''Maximum particle size allowed for $\rho_p=%.1f$g/cm$^3$''' % conf['usr_dust_list']['intrinsic_grain_density'])
 
 fig.savefig(str(out/'max_grain_size.eps'), dpi=900, bbox_tight=True)
 fig.savefig(str(out/'max_grain_size.png'), bbox_tight=True)
@@ -145,12 +148,25 @@ fig,ax = plt.subplots()
 fig.suptitle(r'''Initial Stokes number VS (Hersant 2009) criterion.
 the $2\sigma$ wide region around the bump is displayed''')
 
-St = np.zeros(len(r_range))
-for i,rv in enumerate(r_range):
-    St[i] = my_model.stokes_number.subs(r, rv)
-ax.plot(r_range, St)
+for grain_size in conf['usr_dust_list']['grain_size']:
+    sp = grain_size / ref_length
+    St = np.zeros(len(r_range))
+    my_model.values[DTDisk.sp] = sp
+    for i,rv in enumerate(r_range):
+        St[i] = my_model.stokes_number.subs(r, rv)
+    ax.plot(r_range, St, label=f'$s_p={grain_size}$cm')
 ax.set_yscale('log')
+ax.plot(r_range, 0.5*np.ones(len(r_range)), color='k', lw=0.2)
+
 ylims = ax.get_ylim()
+ax.fill_between(
+    r_range,
+    ylims[1]*np.ones(len(r_range)),
+    0.5*np.ones(len(r_range)),
+    alpha=0.2,
+    facecolor='red'
+)
+
 
 #annotate
 asymp = dict(ls='--', c='k', lw=0.4)
@@ -161,24 +177,27 @@ ax.plot(sigmm*np.ones(2), np.array([1e-4,1e4]), **asymp)
 ax.plot(sigpp*np.ones(2), np.array([1e-4,1e4]), **asymp)
 ax.set_ylim(ylims)
 ax.annotate(s=r'', xy=(sigmm,1), xytext=(sigpp,1), arrowprops=dict(arrowstyle='<->', shrinkA=0, shrinkB=0))
-ax.annotate(s=r'$2\sigma$', xy=(center,1.2))
+ax.annotate(s=r'$2\sigma$', xy=(center, 1.2))
 ax.set_xlabel(r'$r$')
 ax.set_ylabel(r'$\mathrm{St}$')
-
+ax.set_xlim(r_range.min(), r_range.max())
+ax.legend()
 fig.savefig(str(out/'hersant.png'), bbox_tight=True)
 
 
 # Toomre number -----------------------------------
 fig,ax = plt.subplots()
+fig.suptitle('Initial Toomre number $Q$ (SGI excpected where $Q < 1$)')
 Q = np.zeros(len(r_range))
 for i,rv in enumerate(r_range):
     Q[i] = my_model.toomre_number.subs(r, rv)
-ax.plot(r_range, Q)
+ax.plot(r_range, Q, label='$Q$ model')
 ax.set_yscale('log')
 ylims = ax.get_ylim()
 ax.set_xlabel(r'$r$')
 ax.set_ylabel(r'$Q$')
 
+ax.fill_between(r_range, np.ones(len(r_range)), 1e-1*np.ones(len(r_range)), alpha=0.2, facecolor='red')
 ax2 = ax.twinx()
 omega = np.zeros(len(r_range))
 kappa = np.zeros(len(r_range))
