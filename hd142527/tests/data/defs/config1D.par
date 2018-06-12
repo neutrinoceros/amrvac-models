@@ -1,0 +1,82 @@
+!==============================================
+! This is the base configuration file of this
+! simulation.
+!
+! ./amrvac -i config1D.par
+!==============================================
+
+&disk_list
+  central_mass=1d0
+/
+
+&usr_list
+
+!> user defined variables
+
+! Those serve as default, to overwrite them, you can define your own
+! 'usr_config.par' file containing a partially or completly modified
+! version of this list and call it after this file.
+  density_slope = -0.5d0
+  cavity_radius = 3d1
+  cavity_width = 12d0
+  rhozero = 1d-6
+  rhomin = 5d-9
+  aspect_ratio = 1d-2
+/
+
+&meshlist
+  ! prevent amr refining
+  refine_max_level = 1
+  
+  !> radial domain (unit is defined is mod_usr.t)
+  xprobmin1 = 5.0
+  xprobmax1 = 100.0
+  domain_nx1 = 52
+  block_nx1  = 26
+/
+
+
+&boundlist
+  nghostcells = 2
+
+  !> radial boundaries
+  typeboundary_min1 = 'special','cont','special'
+  typeboundary_max1 = 'special','noinflow','special'
+/
+
+
+&filelist
+  base_filename = 'out/cavity'
+  convert_type  = 'vtuBCCmpi'
+  autoconvert   = T           ! convert to vtu files for visualization 
+  nocartesian   = T           ! do not convert my output to cartesian coordinates
+/
+
+
+&hd_list
+  hd_gamma = 1.4
+  hd_energy = .false.
+  hd_gravity = .true.
+  hd_dust = .false.
+/
+
+
+&savelist
+  itsave(1,1) = 0             ! sepcific times for log
+  itsave(1,2) = 0             ! sepcific times for .dat outputs
+  dtsave_log = 0.1
+  dtsave_dat = 0.1
+/
+
+
+&stoplist
+  time_max = 1.0              ! must be stricly greater than the time of last output you want
+/
+
+&methodlist
+  small_density    = 1e-15
+  time_integrator  = 'twostep'
+  flux_scheme      = 20*'hllc'
+  limiter          = 20*'koren'
+  gradient_limiter = 20*'koren'
+/
