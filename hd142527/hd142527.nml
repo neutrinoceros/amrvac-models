@@ -31,7 +31,7 @@
 
 &meshlist
     refine_max_level = 1
-    xprobmin1 = 70.0
+    xprobmin1 = 90.0
     xprobmax1 = 450.0
     domain_nx1 = 512
     block_nx1 = 128
