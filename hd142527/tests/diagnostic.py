@@ -7,10 +7,11 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
-
+import sympy as sp
 
 from test_disk_physics import r, r_range, my_model, my_model_prime,\
-    ref_length, sample0, sample1, conf, usr_list, DTDisk, evaluate_disk_mass_ratio
+    ref_length, sample0, sample1, conf, usr, DTDisk, evaluate_disk_mass_ratio,\
+    get_flaring
 
 parser = ArgumentParser()
 parser.add_argument(
@@ -52,10 +53,11 @@ print('=====================================================')
 
 disk_mass = evaluate_disk_mass_ratio(conf, my_model_prime)
 Q = my_model.toomre_number.subs(r,center+sig).evalf(3)
+flare = get_flaring(my_model.values[DTDisk.slope], my_model.values[DTDisk.gamma])
 print()
-print(f'early disk/star mass ratio        {round(disk_mass*100,3)}%')
+print(f'early disk/star mass ratio        {round(disk_mass*100, 3)}%')
 print(f"typical Toomre's Q                {Q}")
-print(f'effective flaring index           {round(get_flaring(),3)}')
+print(f'effective flaring index           {round(flare, 3)}')
 
 
 
@@ -90,7 +92,7 @@ axes[2].plot(sample1, ys1['dlovelace'], ls='--', label=r'$\partial_r L(r)$')
 for ax in axes:
     #mark the cavity location and add legends
     ylims = ax.get_ylim()
-    ax.plot(usr_list['cavity_radius']*np.ones(2), np.linspace(*ylims, 2), ls=':', lw=0.5, c='k')
+    ax.plot(usr['cavity_radius']*np.ones(2), np.linspace(*ylims, 2), ls=':', lw=0.5, c='k')
     ax.set_ylim(*ylims)
     ax.legend()
 axes[-1].set_xlabel(r'$r$')
@@ -143,14 +145,13 @@ axb.set_yscale('log')
 axb.set_ylim(*[y*ref_length for y in ax.get_ylim()])
 axb.set_ylabel('$s_{p,max}$ (cm)')
 
-fig.suptitle(
-    '''Maximum particle size allowed for $\rho_p=%.1f$g/cm$^3$'''\
-    % conf['usr_dust_list']['intrinsic_grain_density']
-)
+val = '%.1f' % conf['usr_dust_list']['intrinsic_grain_density']
+print(val)
+fig.suptitle(r'Maximum particle size allowed for $\rho_p='+val+r'$g/cm$^3$')
 
 fig.savefig(str(out/'max_grain_size.eps'), dpi=900, bbox_tight=True)
 fig.savefig(str(out/'max_grain_size.png'), bbox_tight=True)
-spmax = local_upper_particle_size(my_model, usr_list['cavity_radius'])
+spmax = local_upper_particle_size(my_model, usr['cavity_radius'])
 print(f'maximum grain size at cavity radius {spmax} (code units)')
 plt.close(fig)
 
