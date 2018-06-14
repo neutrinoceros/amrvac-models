@@ -3,6 +3,7 @@
 '''
 from os import mkdir
 from argparse import ArgumentParser
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,11 +13,16 @@ from test_disk_physics import r, r_range, my_model, my_model_prime,\
     ref_length, sample0, sample1, conf, usr_list, DTDisk, evaluate_disk_mass_ratio
 
 parser = ArgumentParser()
-parser.add_argument('-d', dest='output_dir', type=str, help='select output directory')
+parser.add_argument(
+    '-d',
+    dest='output_dir',
+    type=str,
+    help='select output directory'
+)
 args = parser.parse_args()
 
 
-out = pathlib.Path(args.output_dir)
+out = Path(args.output_dir)
 if out.exists():
     raise FileExistsError(out)
 else:
@@ -55,7 +61,7 @@ print(f'effective flaring index           {round(get_flaring(),3)}')
 
 # From test_2D_statbility.py
 # ..........................
-"""make a plot of the LoveLace function"""
+# plot LoveLace function
 fig, axes = plt.subplots(nrows=3)
 
 fs0 = {
@@ -88,7 +94,7 @@ for ax in axes:
     ax.set_ylim(*ylims)
     ax.legend()
 axes[-1].set_xlabel(r'$r$')
-fig.savefig(str(out/'rayleigh_lovelace.eps'), dpi=900, bbox_tight=True)
+#fig.savefig(str(out/'rayleigh_lovelace.eps'), dpi=900, bbox_tight=True)
 fig.savefig(str(out/'rayleigh_lovelace.png'), bbox_tight=True)
 
 
@@ -97,7 +103,7 @@ fig.savefig(str(out/'rayleigh_lovelace.png'), bbox_tight=True)
 # From test_dust.py
 # .................
 def local_upper_particle_size(model, R):
-    '''Return maximum particle size for \rho_p = 1g/cm^3 at given radial position R.'''    
+    '''Return maximum particle size for \rho_p = 1g/cm^3 at given radial position R.'''
     rho = model.midplane_volumic_density
     cs  = model.sound_speed
     OmK = model.keplerian_angular_velocity
@@ -137,7 +143,10 @@ axb.set_yscale('log')
 axb.set_ylim(*[y*ref_length for y in ax.get_ylim()])
 axb.set_ylabel('$s_{p,max}$ (cm)')
 
-fig.suptitle(r'''Maximum particle size allowed for $\rho_p=%.1f$g/cm$^3$''' % conf['usr_dust_list']['intrinsic_grain_density'])
+fig.suptitle(
+    '''Maximum particle size allowed for $\rho_p=%.1f$g/cm$^3$'''\
+    % conf['usr_dust_list']['intrinsic_grain_density']
+)
 
 fig.savefig(str(out/'max_grain_size.eps'), dpi=900, bbox_tight=True)
 fig.savefig(str(out/'max_grain_size.png'), bbox_tight=True)
@@ -148,8 +157,9 @@ plt.close(fig)
 
 # Reynolds number for dust ------------------------
 fig,ax = plt.subplots()
-ax.plot(r_range,
-        abs(eval_sample(my_model.dust_reynolds, r_range))
+ax.plot(
+    r_range,
+    abs(eval_sample(my_model.dust_reynolds, r_range))
 )
 
 ax.set_yscale('log')
@@ -189,7 +199,8 @@ sigpp = (center+3*sig/2)
 ax.plot(sigmm*np.ones(2), np.array([1e-4,1e4]), **asymp)
 ax.plot(sigpp*np.ones(2), np.array([1e-4,1e4]), **asymp)
 ax.set_ylim(ylims)
-ax.annotate(s=r'', xy=(sigmm,1), xytext=(sigpp,1), arrowprops=dict(arrowstyle='<->', shrinkA=0, shrinkB=0))
+ax.annotate(s=r'', xy=(sigmm,1), xytext=(sigpp,1),
+            arrowprops=dict(arrowstyle='<->', shrinkA=0, shrinkB=0))
 ax.annotate(s=r'$2\sigma$', xy=(center, 1.2))
 ax.set_xlabel(r'$r$')
 ax.set_ylabel(r'$\mathrm{St}$')
