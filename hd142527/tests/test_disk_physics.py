@@ -83,8 +83,8 @@ sample1 = np.linspace(usr['cavity_radius'] - 2*usr['cavity_width'],
 # definitions
 # -----------
 def evaluate_fiducial_mass(conf, model):
-    rmin= conf['usr_list']['cavity_radius']
-    rmax = conf['meshlist']['xprobmax1']
+    rmin = conf['usr_list']['cavity_radius']
+    rmax = 200
     integrand = 2*sp.pi*model.surface_density*r
     fid_mass = sp.integrate(integrand, (r, rmin, rmax))
     return fid_mass.evalf()
