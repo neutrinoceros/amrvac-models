@@ -4,7 +4,6 @@ import pathlib
 
 import numpy as np
 import sympy as sp
-import f90nml
 
 from amrvac_pywrap import merge_configs
 from symdisk import Disk, TransitionDisk as TDisk, DustyDisk as DDisk
@@ -38,34 +37,42 @@ class DTDisk(DDisk, TDisk):
     '''Simply merge properties from DustyDisk and TransitionDisk'''
     pass
 
+
+def build_model(conf, model_class):
+    usr_list = conf['usr_list']
+
+    my_subs = {
+        DTDisk.star_mass     : conf['disk_list']['central_mass'],
+        DTDisk.sig           : usr_list['cavity_width'],
+        DTDisk.r0            : usr_list['cavity_radius'],
+        DTDisk.rho0          : usr_list['rhozero'],
+        DTDisk.slope         : usr_list['density_slope'],
+        DTDisk.aspect_ratio0 : usr_list['aspect_ratio'],
+        DTDisk.gamma         : conf['hd_list']['hd_gamma'],
+        DTDisk.aspect_ratio0 : usr_list['aspect_ratio'],
+        DTDisk.eta           : h2_viscosity_code,
+        DTDisk.sp            : max(conf['usr_dust_list']['grain_size']) / ref_length,
+        DTDisk.rhop          : conf['usr_dust_list']['intrinsic_grain_density'] / Msun * ref_length**3
+    }
+    return model_class(my_subs)
+
+
 conf = merge_configs([here/'hd142527.nml', here/'add_dust.par'])
 
 r_range = np.linspace(conf['meshlist']['xprobmin1'], conf['meshlist']['xprobmax1'], num=100)
-usr_list = conf['usr_list']
 
-my_subs = {
-    DTDisk.star_mass     : conf['disk_list']['central_mass'],
-    DTDisk.sig           : usr_list['cavity_width'],
-    DTDisk.r0            : usr_list['cavity_radius'],
-    DTDisk.rho0          : usr_list['rhozero'],
-    DTDisk.slope         : usr_list['density_slope'],
-    DTDisk.aspect_ratio0 : usr_list['aspect_ratio'],
-    DTDisk.gamma         : conf['hd_list']['hd_gamma'],
-    DTDisk.aspect_ratio0 : usr_list['aspect_ratio'],
-    DTDisk.eta           : h2_viscosity_code,
-    DTDisk.sp            : max(conf['usr_dust_list']['grain_size']) / ref_length,
-    DTDisk.rhop          : conf['usr_dust_list']['intrinsic_grain_density'] / Msun * ref_length**3
-}
+my_model  = build_model(conf, DTDisk)
 
-my_model = DTDisk(my_subs)
-my_model_prime = Disk(my_subs) #an 'earlier' version of the same disk, without a cavity
+#an 'earlier' version of the same disk, without a cavity
+my_model_prime = build_model(conf, Disk)
 
 r = sp.symbols('r')
 x = sp.symbols('x')
 
+usr = conf['usr_list']
 sample0 = np.linspace(conf['meshlist']['xprobmin1'], conf['meshlist']['xprobmax1'], 100)
-sample1 = np.linspace(usr_list['cavity_radius'] - 2*usr_list['cavity_width'],
-                      usr_list['cavity_radius'] + 2*usr_list['cavity_width'],
+sample1 = np.linspace(usr['cavity_radius'] - 2*usr['cavity_width'],
+                      usr['cavity_radius'] + 2*usr['cavity_width'],
                       100)
 
 
@@ -77,8 +84,8 @@ def evaluate_disk_mass_ratio(conf, model):
     disk_mass = sp.integrate(integrand, (r, rmin, rmax))
     return disk_mass.evalf() / conf['disk_list']['central_mass']
 
-def get_flaring():
-    return 0.5 * (1 + usr_list['density_slope']*(1-conf['hd_list']['hd_gamma']))
+def get_flaring(alpha, gamma):
+    return 0.5 * (1 + alpha*(1-gamma))
 
 
 
@@ -107,32 +114,48 @@ def test_disk_mass_ratio():
     '''
     assert evaluate_disk_mass_ratio(conf, my_model_prime) < 0.05
 
+# def test_fiducal_mass():
+#     '''Check consistency with observational constraints.'''
+#     #write me
+#     rmax = conf['meshlist']['xprobmax1']
+#     alpha = my_model.values[DTDisk.slope]
+#     rb = my_model.values[DTDisk.r0]
+#     # (/ r0**alpha) ref radius supposed unity here !
+#     M_fid = 2*np.pi * my_model.values[DTDisk.rho0] / (2+alpha) * (rmax**(alpha+2) - rb**(alpha+2))
+#     assert abs(M_fid - 0.1) < 0.01
+
 def test_effective_flaring_index():
-    assert not get_flaring() < 0
+    params = dict(
+        alpha = usr['density_slope'],
+        gamma = conf['hd_list']['hd_gamma']
+    )
+    assert not get_flaring(**params) < 0
 
 
 # stability tests
 # ---------------
 def test_rayleigh_stability():
     for x in sample0:
-        assert(my_model.rayleigh_function.subs(r,x) > 0)
+        assert my_model.rayleigh_function.subs(r,x) > 0
 
 def test_rwi_instability():
     '''Check that initial setup is RWI UNstable.'''
     LoveP  = my_model.lovelace_function.diff(r)
     bounds = (
-        my_subs[TDisk.r0] - 2*my_subs[TDisk.sig],
-        my_subs[TDisk.r0] + 2*my_subs[TDisk.sig]
+        my_model.values[TDisk.r0] - 2*my_model.values[TDisk.sig],
+        my_model.values[TDisk.r0] + 2*my_model.values[TDisk.sig]
     )
     try:
-        root = sp.nsolve(LoveP, bounds, solver='bisect')#search for a maximum of LovelaceFunction near r0
-        delta = (root-my_subs[TDisk.r0])
-        print(f"\n found root at {root}, delta = {delta}, ratio = {abs(delta/my_subs[TDisk.r0])}\n")
+        #search for a maximum of LovelaceFunction near r0
+        root = sp.nsolve(LoveP, bounds, solver='bisect')
+        delta = (root-my_model.values[TDisk.r0])
+        print(f"\n found root at {root}, delta = {delta}", end =', ')
+        print(f"ratio = {abs(delta/my_model.values[TDisk.r0])}\n")
     except ValueError:
         #raised when a root can't be found in the interval
         delta = sp.nan
     assert(delta is not sp.nan)
-    assert(abs(delta/my_subs[TDisk.r0]) < 0.2)#assert the extremum is close to r0 with a 20% margin
+    assert(abs(delta/my_model.values[TDisk.r0]) <= 0.2)#assert the extremum is close to r0 with a 20% margin
 
 
 # dust related test
