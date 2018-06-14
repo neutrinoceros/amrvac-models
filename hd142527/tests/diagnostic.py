@@ -2,12 +2,14 @@
 '''Addition to test suite : get verbatim comments and graphical check ups associated with tests
 '''
 from os import mkdir
+from argparse import ArgumentParser
 
 import matplotlib.pyplot as plt
+import numpy as np
 
-from test_disk_physics import *
 
-from argparse import ArgumentParser
+from test_disk_physics import r, r_range, my_model, my_model_prime,\
+    ref_length, sample0, sample1, conf, usr_list, DTDisk, evaluate_disk_mass_ratio
 
 parser = ArgumentParser()
 parser.add_argument('-d', dest='output_dir', type=str, help='select output directory')
