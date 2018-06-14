@@ -172,7 +172,11 @@ fig,ax = plt.subplots()
 fig.suptitle(r'''Initial Stokes number VS (Hersant 2009) criterion.
 the $2\sigma$ wide region around the bump is displayed''')
 
-for grain_size in conf['usr_dust_list']['grain_size']:
+sizes = conf['usr_dust_list']['grain_size']
+if isinstance(sizes, float):
+    sizes = [sizes]
+
+for grain_size in sizes:
     sp = grain_size / ref_length
     St = np.zeros(len(r_range))
     my_model.values[DTDisk.sp] = sp

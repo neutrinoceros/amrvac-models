@@ -41,6 +41,10 @@ class DTDisk(DDisk, TDisk):
 def build_model(conf, model_class):
     usr_list = conf['usr_list']
 
+    if isinstance(conf['usr_dust_list']['grain_size'], list):
+        maxsize = max(conf['usr_dust_list']['grain_size'])
+    else:
+        maxsize = conf['usr_dust_list']['grain_size']
     my_subs = {
         DTDisk.star_mass     : conf['disk_list']['central_mass'],
         DTDisk.sig           : usr_list['cavity_width'],
@@ -51,7 +55,7 @@ def build_model(conf, model_class):
         DTDisk.gamma         : conf['hd_list']['hd_gamma'],
         DTDisk.aspect_ratio0 : usr_list['aspect_ratio'],
         DTDisk.eta           : h2_viscosity_code,
-        DTDisk.sp            : max(conf['usr_dust_list']['grain_size']) / ref_length,
+        DTDisk.sp            : maxsize / ref_length,
         DTDisk.rhop          : conf['usr_dust_list']['intrinsic_grain_density'] / Msun * ref_length**3
     }
     return model_class(my_subs)
@@ -78,6 +82,13 @@ sample1 = np.linspace(usr['cavity_radius'] - 2*usr['cavity_width'],
 
 # definitions
 # -----------
+def evaluate_fiducial_mass(conf, model):
+    rmin= conf['usr_list']['cavity_radius']
+    rmax = conf['meshlist']['xprobmax1']
+    integrand = 2*sp.pi*model.surface_density*r
+    fid_mass = sp.integrate(integrand, (r, rmin, rmax))
+    return fid_mass.evalf()
+
 def evaluate_disk_mass_ratio(conf, model):
     rmin, rmax = conf['meshlist']['xprobmin1'], conf['meshlist']['xprobmax1']
     integrand = 2*sp.pi*model.surface_density*r
@@ -105,24 +116,21 @@ def test_neglible_self_gravity():
             assert model.toomre_number.subs(r,s) > 1
 
 def test_disk_mass_ratio():
-    '''Check that total disk mass is less than 5% of the mass star.
+    '''Check that total disk mass is less than 30% of the mass star.
 
     Star mass is assumed unity.
     We test the powerlaw distribution itself, without taking the cavity into account.
     This test is somewhat arbitrary and should not be considered too important as long as
     self gravity is negligle (see previous test).
     '''
-    assert evaluate_disk_mass_ratio(conf, my_model_prime) < 0.05
+    assert evaluate_disk_mass_ratio(conf, my_model_prime) < 0.30
 
-# def test_fiducal_mass():
-#     '''Check consistency with observational constraints.'''
-#     #write me
-#     rmax = conf['meshlist']['xprobmax1']
-#     alpha = my_model.values[DTDisk.slope]
-#     rb = my_model.values[DTDisk.r0]
-#     # (/ r0**alpha) ref radius supposed unity here !
-#     M_fid = 2*np.pi * my_model.values[DTDisk.rho0] / (2+alpha) * (rmax**(alpha+2) - rb**(alpha+2))
-#     assert abs(M_fid - 0.1) < 0.01
+def test_fiducial_mass():
+    '''Compare an estimation of the disk mass with observations (20% margin)'''
+    obs = 1e-1 #disk mass from obervations
+    eff = evaluate_fiducial_mass(conf, my_model_prime)
+    print('\n\n\n', eff, obs, '\n\n')
+    assert abs(eff-obs)/obs < 2e-1
 
 def test_effective_flaring_index():
     params = dict(
