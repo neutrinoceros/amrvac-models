@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''Addition to test suite : get verbatim comments and graphical check ups associated with tests
 '''
-from os import mkdir
+from os import mkdir, remove
 from argparse import ArgumentParser
 from pathlib import Path
 
@@ -20,15 +20,23 @@ parser.add_argument(
     type=str,
     help='select output directory'
 )
+parser.add_argument(
+    '--overwrite',
+    action='store_true',
+    help='allow overwritting'
+)
 args = parser.parse_args()
 
-
 out = Path(args.output_dir)
-if out.exists():
-    raise FileExistsError(out)
-else:
+if not out.exists():
     mkdir(out)
-conf.write(out/'conf.nml')
+    conf.write(out/'conf.nml')
+else:
+    if not args.overwrite:
+        raise FileExistsError(out)
+    else:
+        remove(out/'conf.nml')
+        conf.write(out/'conf.nml')
 
 center = my_model.get_value('r0')
 sig = my_model.get_value('sig')
