@@ -6,7 +6,6 @@
 module mod_usr
 
   use mod_hd
-  use mod_dust
   use mod_constants
   use mod_disk_phys
   use mod_disk_check
@@ -33,10 +32,10 @@ module mod_usr
   double precision :: pert_amp = one
 
   ! custom dust parameters (meant for 1 grain population only)
-  double precision :: intrinsic_grain_density = one  ! (g/cm^3)
+  double precision :: grain_density_gcm3 = one  ! (g/cm^3)
   double precision :: gas2dust_ratio = 1d2
 
-  double precision, allocatable :: grain_size(:)
+  double precision, allocatable :: grain_size_cm(:)
 
 contains
 
@@ -73,6 +72,7 @@ contains
 
   subroutine read_usr_parameters(files)
     !> Read parameters from .par files
+    use mod_dust, only: dust_n_species
     use mod_global_parameters, only: unitpar
     character(len=*), intent(in) :: files(:)
     integer n
@@ -86,9 +86,9 @@ contains
          pert_moment, pert_amp
 
     namelist /usr_dust_list/ gas2dust_ratio,&
-         intrinsic_grain_density, grain_size
+         grain_density_gcm3, grain_size_cm
 
-    allocate(grain_size(dust_n_species))
+    allocate(grain_size_cm(dust_n_species))
     do n = 1, size(files)
        open(unitpar, file=trim(files(n)), status="old")
        read(unitpar, usr_list, end=111)
@@ -103,6 +103,7 @@ contains
 
   subroutine parameters()
     ! Overwrite some default parameters.
+    use mod_dust, only: dust_n_species, dust_density, dust_size
     use mod_global_parameters
     ! .. local ..
     double precision :: norm_density
@@ -113,8 +114,11 @@ contains
     norm_density = msun2g/au2cm**3
     if (hd_dust) then
        do i = 1, dust_n_species
-          dust_size(i)    = one / au2cm * grain_size(i)                  !(au2cm)**-1 is 1cm in code units
-          dust_density(i) = one / norm_density * intrinsic_grain_density !1g/cm^3 in code unit
+          !(au2cm)**-1 is 1cm in code units
+          dust_size(i) = grain_size_cm(i) / au2cm
+
+          !1g/cm^3 in code unit
+          dust_density(i) = grain_density_gcm3 / norm_density
        end do
     end if
 
@@ -134,7 +138,7 @@ contains
   subroutine initial_conditions(ixI^L, ixO^L, w, x)
     ! Set up initial conditions
     use mod_global_parameters
-
+    use mod_dust, only: dust_n_species, dust_rho, dust_mom, dust_size
     integer, intent(in)             :: ixI^L, ixO^L
     double precision, intent(in)    :: x(ixI^S,1:ndim)
     double precision, intent(inout) :: w(ixI^S,1:nw)
