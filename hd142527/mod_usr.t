@@ -32,7 +32,7 @@ module mod_usr
   double precision :: pert_amp = one
 
   ! custom dust parameters (meant for 1 grain population only)
-  double precision :: intrinsic_grain_density = one  ! (g/cm^3)
+  double precision :: grain_density_gcm3 = one  ! (g/cm^3)
   double precision :: gas2dust_ratio = 1d2
 
   double precision, allocatable :: grain_size_cm(:)
@@ -86,7 +86,7 @@ contains
          pert_moment, pert_amp
 
     namelist /usr_dust_list/ gas2dust_ratio,&
-         intrinsic_grain_density, grain_size_cm
+         grain_density_gcm3, grain_size_cm
 
     allocate(grain_size_cm(dust_n_species))
     do n = 1, size(files)
@@ -114,8 +114,11 @@ contains
     norm_density = msun2g/au2cm**3
     if (hd_dust) then
        do i = 1, dust_n_species
-          dust_size(i)    = one / au2cm * grain_size_cm(i)                  !(au2cm)**-1 is 1cm in code units
-          dust_density(i) = one / norm_density * intrinsic_grain_density !1g/cm^3 in code unit
+          !(au2cm)**-1 is 1cm in code units
+          dust_size(i) = grain_size_cm(i) / au2cm
+
+          !1g/cm^3 in code unit
+          dust_density(i) = grain_density_gcm3 / norm_density
        end do
     end if
 

@@ -17,7 +17,7 @@
 
 &usr_dust_list
   gas2dust_ratio = 1d2
-  intrinsic_grain_density = 1d0  ! 1g/cm^3
+  grain_density_gcm3 = 1d0
   grain_size_cm = 1d-1
 /
 
