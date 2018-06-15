@@ -35,7 +35,7 @@ module mod_usr
   double precision :: intrinsic_grain_density = one  ! (g/cm^3)
   double precision :: gas2dust_ratio = 1d2
 
-  double precision, allocatable :: grain_size(:)
+  double precision, allocatable :: grain_size_cm(:)
 
 contains
 
@@ -86,9 +86,9 @@ contains
          pert_moment, pert_amp
 
     namelist /usr_dust_list/ gas2dust_ratio,&
-         intrinsic_grain_density, grain_size
+         intrinsic_grain_density, grain_size_cm
 
-    allocate(grain_size(dust_n_species))
+    allocate(grain_size_cm(dust_n_species))
     do n = 1, size(files)
        open(unitpar, file=trim(files(n)), status="old")
        read(unitpar, usr_list, end=111)
@@ -114,7 +114,7 @@ contains
     norm_density = msun2g/au2cm**3
     if (hd_dust) then
        do i = 1, dust_n_species
-          dust_size(i)    = one / au2cm * grain_size(i)                  !(au2cm)**-1 is 1cm in code units
+          dust_size(i)    = one / au2cm * grain_size_cm(i)                  !(au2cm)**-1 is 1cm in code units
           dust_density(i) = one / norm_density * intrinsic_grain_density !1g/cm^3 in code unit
        end do
     end if
