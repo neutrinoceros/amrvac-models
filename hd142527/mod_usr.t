@@ -9,7 +9,6 @@ module mod_usr
   use mod_constants
 
   implicit none
-  ! Custom variables can be defined here
   double precision :: au2cm  = 1.49597870691d13 ! a.u. to cm         conversion factor
   double precision :: msun2g = 1.988d33         ! solar mass to gram conversion factor
 
@@ -18,15 +17,15 @@ module mod_usr
   double precision :: rhozero, rhomin
   double precision :: aspect_ratio
 
-  ! perturbation_list
+  ! &perturbation_list
   logical :: pert_noise = .false.
   integer :: pert_moment = 1
   double precision :: pert_amp = one
 
-  ! custom dust parameters (meant for 1 grain population only)
+  ! &usr_dust_list
+  ! custom dust parameters
   double precision :: grain_density_gcm3 = one  ! (g/cm^3)
   double precision :: gas2dust_ratio = 1d2
-
   double precision, allocatable :: grain_size_cm(:)
 
 contains
@@ -50,8 +49,6 @@ contains
     usr_gravity          => central_gravity
     usr_special_bc       => cst_bound
     usr_process_adv_grid => wave_killing_parabolic
-    usr_aux_output       => specialvar_output
-    usr_add_aux_names    => specialvarnames_output
 
     ! Choose independent normalization units if using dimensionless variables.
     unit_length  = au2cm                     ! 1au            (cm)
@@ -185,9 +182,8 @@ contains
   end subroutine initial_conditions
 
 
-  ! Boundaries and wavekilling
-  ! --------------------------
-
+  ! Boundaries
+  ! ----------
   subroutine cst_bound(qt,ixG^L,ixB^L,iB,w,x)
     use mod_global_parameters
     use mod_disk_boundaries, only: constant_boundaries
@@ -235,35 +231,5 @@ contains
     w(ixO^S, mom(mflag)) = w(ixO^S, mom(mflag)) &
          + amps(ixO^S)*exp(-(x(ixO^S, r_)-cavity_radius)**2/(10*cavity_width**2))
   end subroutine pert_random_noise
-
-  ! Additional output variables
-  ! ---------------------------
-
-  subroutine specialvar_output(ixI^L, ixO^L, w, x, normconv)
-    ! Add an output for the vertical component of vorticity
-    ! in cylindrical coordinates
-    use mod_global_parameters
-    integer, intent(in) :: ixI^L, ixO^L
-    double precision, intent(in) :: x(ixI^S,1:ndim)
-    double precision :: w(ixI^S,nw+nwauxio)
-    double precision :: normconv(0:nw+nwauxio)
-
-    ! .. local ..
-    double precision, dimension(ixI^S) :: vr, rvphi
-    double precision, dimension(ixI^S) :: rad_part, azim_part
-
-    rvphi(ixI^S) = w(ixI^S,mom(2))/w(ixI^S,rho_) * x(ixI^S,r_)
-    vr   (ixI^S) = w(ixI^S,mom(1))/w(ixI^S,rho_)
-    call gradient(rvphi, ixI^L, ixO^L, r_,   rad_part)
-    call gradient(vr,    ixI^L, ixO^L, phi_, azim_part)
-
-    !w(ixO^S,nw+1) = (rad_part - azim_part) /x(ixO^S,r_)
-  end subroutine specialvar_output
-
-  subroutine specialvarnames_output(varnames)
-    use mod_global_parameters
-    character(len=*) :: varnames
-    varnames = 'vorticity'
-  end subroutine specialvarnames_output
 
 end module mod_usr
