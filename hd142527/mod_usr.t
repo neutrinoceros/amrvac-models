@@ -8,7 +8,6 @@ module mod_usr
   use mod_hd
   use mod_constants
   use mod_disk_phys
-  use mod_disk_check
 
   implicit none
   ! Custom variables can be defined here
@@ -134,6 +133,7 @@ contains
   subroutine initial_conditions(ixI^L, ixO^L, w, x)
     ! Set up initial conditions
     use mod_global_parameters
+    use mod_disk_check, only: check_radial_range
     use mod_dust, only: dust_n_species, dust_rho, dust_mom, dust_size
     integer, intent(in)             :: ixI^L, ixO^L
     double precision, intent(in)    :: x(ixI^S,1:ndim)
