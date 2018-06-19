@@ -9,7 +9,6 @@ module mod_usr
   use mod_constants
   use mod_disk_phys
   use mod_disk_check
-  use mod_disk_boundaries
 
   implicit none
   ! Custom variables can be defined here
@@ -189,6 +188,7 @@ contains
 
   subroutine cst_bound(qt,ixG^L,ixB^L,iB,w,x)
     use mod_global_parameters
+    use mod_disk_boundaries, only: constant_boundaries
     !embed a function defined in mod_disk_boundaries.t
     integer, intent(in)             :: ixG^L, ixB^L, iB
     double precision, intent(in)    :: qt, x(ixG^S,1:ndim)
