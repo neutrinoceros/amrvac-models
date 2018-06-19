@@ -15,21 +15,22 @@ here = pathlib.Path(__file__).absolute().parent.parent
 au2m = 1.49597870691e11
 m2au = au2m**-1
 m2cm = 1e2
-cm2au = m2cm**-1 * m2au
+au2cm = au2m * m2cm
+cm2au = au2cm**-1
 
 kg2g = 1e3
 
 s2yr = 3.1536e7
 
-Msun       = 1.988e33                 #in g
+msun2g     = 1.988e33                 #in g
 ref_length = au2m * m2cm              #1au in cm
 ref_time   = s2yr / (2*np.pi)         #1yr/2pi in s
-ref_sigma  = Msun / ref_length**2
+ref_sigma  = msun2g / ref_length**2
 ref_rho    = ref_sigma / ref_length
 
 h2_viscosity_si   = 2e-6 #in N.s/m^2. ~ tabulated value for molecular hydrogen @ T=50K
 h2_viscosity_cgs  = h2_viscosity_si * kg2g / m2au / s2yr
-h2_viscosity_code = h2_viscosity_cgs / Msun * ref_time * ref_length
+h2_viscosity_code = h2_viscosity_cgs / msun2g * ref_time * ref_length
 
 # build the disk model object from configuration files
 # ----------------------------------------------------
@@ -41,10 +42,10 @@ class DTDisk(DDisk, TDisk):
 def build_model(conf, model_class):
     usr_list = conf['usr_list']
 
-    if isinstance(conf['usr_dust_list']['grain_size'], list):
-        maxsize = max(conf['usr_dust_list']['grain_size'])
+    if isinstance(conf['usr_dust_list']['grain_size_cm'], list):
+        maxsize = max(conf['usr_dust_list']['grain_size_cm'])
     else:
-        maxsize = conf['usr_dust_list']['grain_size']
+        maxsize = conf['usr_dust_list']['grain_size_cm']
     my_subs = {
         DTDisk.star_mass     : conf['disk_list']['central_mass'],
         DTDisk.sig           : usr_list['cavity_width'],
@@ -55,8 +56,8 @@ def build_model(conf, model_class):
         DTDisk.gamma         : conf['hd_list']['hd_gamma'],
         DTDisk.aspect_ratio0 : usr_list['aspect_ratio'],
         DTDisk.eta           : h2_viscosity_code,
-        DTDisk.sp            : maxsize / ref_length,
-        DTDisk.rhop          : conf['usr_dust_list']['intrinsic_grain_density'] / Msun * ref_length**3
+        DTDisk.sp            : maxsize * cm2au,
+        DTDisk.rhop          : conf['usr_dust_list']['grain_density_gcm3'] / msun2g * au2cm**3
     }
     return model_class(my_subs)
 

@@ -153,7 +153,7 @@ axb.set_yscale('log')
 axb.set_ylim(*[y*ref_length for y in ax.get_ylim()])
 axb.set_ylabel('$s_{p,max}$ (cm)')
 
-val = '%.1f' % conf['usr_dust_list']['intrinsic_grain_density']
+val = '%.1f' % conf['usr_dust_list']['grain_density_gcm3']
 print(val)
 fig.suptitle(r'Maximum particle size allowed for $\rho_p='+val+r'$g/cm$^3$')
 
@@ -180,7 +180,7 @@ fig,ax = plt.subplots()
 fig.suptitle(r'''Initial Stokes number VS (Hersant 2009) criterion.
 the $2\sigma$ wide region around the bump is displayed''')
 
-sizes = conf['usr_dust_list']['grain_size']
+sizes = conf['usr_dust_list']['grain_size_cm']
 if isinstance(sizes, float):
     sizes = [sizes]
 
