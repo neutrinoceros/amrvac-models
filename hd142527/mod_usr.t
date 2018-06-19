@@ -20,10 +20,6 @@ module mod_usr
   double precision :: density_slope, cavity_radius, cavity_width
   double precision :: rhozero, rhomin
   double precision :: aspect_ratio
-  double precision :: wk_infrac = 15d-2, wk_outfrac = 15d-2 ! radial limits for wave killing zone, given as excess
-                                                            ! and shortcoming fractions of radial boundaries 
-                                                            ! respectively.
-  double precision :: wk_amp = 2d1 ! arbitrary efficiency coefficient for wave-killing algo
 
   ! perturbation_list
   logical :: pert_noise = .false.
@@ -44,6 +40,7 @@ contains
     use mod_usr_methods
     use mod_disk_parameters, only: read_disk_parameters
     use mod_disk_phys, only: central_gravity
+    use mod_disk_boundaries, only: wave_killing_parabolic
 
     ! Choose coordinate system according to user input at setup
     {^IFONED call set_coordinate_system("polar_1.5D")}
@@ -55,7 +52,7 @@ contains
     usr_set_parameters   => parameters
     usr_gravity          => central_gravity
     usr_special_bc       => cst_bound
-    usr_process_adv_grid => add_wave_killing
+    usr_process_adv_grid => wave_killing_parabolic
     usr_aux_output       => specialvar_output
     usr_add_aux_names    => specialvarnames_output
 
@@ -80,8 +77,7 @@ contains
 
     namelist /usr_list/ aspect_ratio,&
          cavity_radius, cavity_width,&
-         rhozero, rhomin, density_slope,&
-         wk_infrac, wk_outfrac, wk_amp ! wave killing parameters
+         rhozero, rhomin, density_slope
 
     namelist /perturbation_list/ pert_noise,&
          pert_moment, pert_amp
@@ -200,18 +196,6 @@ contains
     call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,rho_)
     call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,mom(2))
   end subroutine cst_bound
-
-
-  subroutine add_wave_killing(igrid, level, ixI^L, ixO^L, qt, w, x)
-    ! Called every time step just after advance (with w^(n+1), it^n, t^n)
-    use mod_global_parameters
-    integer, intent(in)             :: igrid, level, ixI^L, ixO^L
-    double precision, intent(in)    :: qt
-    double precision, intent(in)    :: x(ixI^S,1:ndim)
-    double precision, intent(inout) :: w(ixI^S,1:nw)
-    call wave_killing_parabolic(dt, ixI^L, ixI^L, 1, nw, wk_infrac, wk_outfrac, wk_amp, w, x)
-  end subroutine add_wave_killing
-
 
   ! Optional perturbations to the initial state
   ! ------------------------------------------
