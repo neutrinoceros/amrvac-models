@@ -7,12 +7,8 @@ module mod_usr
 
   use mod_hd
   use mod_constants
-  use mod_disk_phys
-  use mod_disk_check
-  use mod_disk_boundaries
 
   implicit none
-  ! Custom variables can be defined here
   double precision :: au2cm  = 1.49597870691d13 ! a.u. to cm         conversion factor
   double precision :: msun2g = 1.988d33         ! solar mass to gram conversion factor
 
@@ -20,20 +16,16 @@ module mod_usr
   double precision :: density_slope, cavity_radius, cavity_width
   double precision :: rhozero, rhomin
   double precision :: aspect_ratio
-  double precision :: wk_infrac = 15d-2, wk_outfrac = 15d-2 ! radial limits for wave killing zone, given as excess
-                                                            ! and shortcoming fractions of radial boundaries 
-                                                            ! respectively.
-  double precision :: wk_amp = 2d1 ! arbitrary efficiency coefficient for wave-killing algo
 
-  ! perturbation_list
+  ! &perturbation_list
   logical :: pert_noise = .false.
   integer :: pert_moment = 1
   double precision :: pert_amp = one
 
-  ! custom dust parameters (meant for 1 grain population only)
+  ! &usr_dust_list
+  ! custom dust parameters
   double precision :: grain_density_gcm3 = one  ! (g/cm^3)
   double precision :: gas2dust_ratio = 1d2
-
   double precision, allocatable :: grain_size_cm(:)
 
 contains
@@ -44,6 +36,7 @@ contains
     use mod_usr_methods
     use mod_disk_parameters, only: read_disk_parameters
     use mod_disk_phys, only: central_gravity
+    use mod_disk_boundaries, only: wave_killing_parabolic
 
     ! Choose coordinate system according to user input at setup
     {^IFONED call set_coordinate_system("polar_1.5D")}
@@ -55,9 +48,7 @@ contains
     usr_set_parameters   => parameters
     usr_gravity          => central_gravity
     usr_special_bc       => cst_bound
-    usr_process_adv_grid => add_wave_killing
-    usr_aux_output       => specialvar_output
-    usr_add_aux_names    => specialvarnames_output
+    usr_process_adv_grid => wave_killing_parabolic
 
     ! Choose independent normalization units if using dimensionless variables.
     unit_length  = au2cm                     ! 1au            (cm)
@@ -80,8 +71,7 @@ contains
 
     namelist /usr_list/ aspect_ratio,&
          cavity_radius, cavity_width,&
-         rhozero, rhomin, density_slope,&
-         wk_infrac, wk_outfrac, wk_amp ! wave killing parameters
+         rhozero, rhomin, density_slope
 
     namelist /perturbation_list/ pert_noise,&
          pert_moment, pert_amp
@@ -139,6 +129,10 @@ contains
   subroutine initial_conditions(ixI^L, ixO^L, w, x)
     ! Set up initial conditions
     use mod_global_parameters
+    use mod_disk_phys, only: disk_density_cavity,&
+         set_centrifugal_eq_angular_vel,&
+         set_keplerian_angular_motion
+    use mod_disk_check, only: check_radial_range
     use mod_dust, only: dust_n_species, dust_rho, dust_mom, dust_size
     integer, intent(in)             :: ixI^L, ixO^L
     double precision, intent(in)    :: x(ixI^S,1:ndim)
@@ -188,11 +182,11 @@ contains
   end subroutine initial_conditions
 
 
-  ! Boundaries and wavekilling
-  ! --------------------------
-
+  ! Boundaries
+  ! ----------
   subroutine cst_bound(qt,ixG^L,ixB^L,iB,w,x)
     use mod_global_parameters
+    use mod_disk_boundaries, only: constant_boundaries
     !embed a function defined in mod_disk_boundaries.t
     integer, intent(in)             :: ixG^L, ixB^L, iB
     double precision, intent(in)    :: qt, x(ixG^S,1:ndim)
@@ -200,18 +194,6 @@ contains
     call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,rho_)
     call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,mom(2))
   end subroutine cst_bound
-
-
-  subroutine add_wave_killing(igrid, level, ixI^L, ixO^L, qt, w, x)
-    ! Called every time step just after advance (with w^(n+1), it^n, t^n)
-    use mod_global_parameters
-    integer, intent(in)             :: igrid, level, ixI^L, ixO^L
-    double precision, intent(in)    :: qt
-    double precision, intent(in)    :: x(ixI^S,1:ndim)
-    double precision, intent(inout) :: w(ixI^S,1:nw)
-    call wave_killing_parabolic(dt, ixI^L, ixI^L, 1, nw, wk_infrac, wk_outfrac, wk_amp, w, x)
-  end subroutine add_wave_killing
-
 
   ! Optional perturbations to the initial state
   ! ------------------------------------------
@@ -249,35 +231,5 @@ contains
     w(ixO^S, mom(mflag)) = w(ixO^S, mom(mflag)) &
          + amps(ixO^S)*exp(-(x(ixO^S, r_)-cavity_radius)**2/(10*cavity_width**2))
   end subroutine pert_random_noise
-
-  ! Additional output variables
-  ! ---------------------------
-
-  subroutine specialvar_output(ixI^L, ixO^L, w, x, normconv)
-    ! Add an output for the vertical component of vorticity
-    ! in cylindrical coordinates
-    use mod_global_parameters
-    integer, intent(in) :: ixI^L, ixO^L
-    double precision, intent(in) :: x(ixI^S,1:ndim)
-    double precision :: w(ixI^S,nw+nwauxio)
-    double precision :: normconv(0:nw+nwauxio)
-
-    ! .. local ..
-    double precision, dimension(ixI^S) :: vr, rvphi
-    double precision, dimension(ixI^S) :: rad_part, azim_part
-
-    rvphi(ixI^S) = w(ixI^S,mom(2))/w(ixI^S,rho_) * x(ixI^S,r_)
-    vr   (ixI^S) = w(ixI^S,mom(1))/w(ixI^S,rho_)
-    call gradient(rvphi, ixI^L, ixO^L, r_,   rad_part)
-    call gradient(vr,    ixI^L, ixO^L, phi_, azim_part)
-
-    !w(ixO^S,nw+1) = (rad_part - azim_part) /x(ixO^S,r_)
-  end subroutine specialvar_output
-
-  subroutine specialvarnames_output(varnames)
-    use mod_global_parameters
-    character(len=*) :: varnames
-    varnames = 'vorticity'
-  end subroutine specialvarnames_output
 
 end module mod_usr
