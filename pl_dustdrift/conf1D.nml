@@ -5,7 +5,6 @@
 
 &disk_list
     central_mass = 2.2
-    wk_amp = 1.0
 /
 
 &usr_list
@@ -21,17 +20,13 @@
 &meshlist
     refine_max_level = 1
     xprobmin1 = 10.0
-    xprobmax1 = 50.0
+    xprobmax1 = 100.0
     domain_nx1 = 512
-    block_nx1 = 128
-    xprobmin2 = 0.0
-    xprobmax2 = 1.0
-    domain_nx2 = 128
-    block_nx2 = 64
+    block_nx1 = 256
 /
 
 &filelist
-    base_filename = 'out_wk/pl_drift'
+    base_filename = 'out_1D/pl_drift'
     convert_type = 'vtuBCCmpi'
     autoconvert = .true.
     nocartesian = .true.
@@ -45,26 +40,24 @@
 /
 
 &dust_list
-  dust_n_species = 1
+  dust_n_species = 5
   gas_mu = 2d0
   dust_temperature = 0d0
   dust_min_rho = 1d-15
-  dust_method = 'none'    !use 'Kwok' for coupling
+  dust_method = 'Kwok'    !use 'Kwok' for coupling
   dust_retroaction = .false.
 /
 
 &usr_dust_list
   gas2dust_ratio = 1d2
   grain_density_gcm3 = 1d0
-  grain_size_cm = 1d1
+  grain_size_cm = 1d4, 1d3, 1d2, 1d1, 1d0
 /
 
 &boundlist
     nghostcells = 2
-    typeboundary_min1 = 'special', 'cont', 'special', 3*'cont'
-    typeboundary_max1 = 'special', 'noinflow', 'special', 3*'cont'
-    typeboundary_min2 = 'periodic', 'periodic', 'periodic', 3*'periodic'
-    typeboundary_max2 = 'periodic', 'periodic', 'periodic', 3*'periodic'
+    typeboundary_min1 = 'special', 'cont', 'special', 15*'cont'
+    typeboundary_max1 = 'special', 'noinflow', 'special', 15*'cont'
 /
 
 
@@ -72,7 +65,7 @@
     itsave(1, 1) = 0
     itsave(1, 2) = 0
     dtsave_log = 22e-2
-    dtsave_dat = 22d1 ! 10.0 orbit at r=10
+    dtsave_dat = 22d2 ! 100.0 orbit at r=10
 /
 
 &stoplist

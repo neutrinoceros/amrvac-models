@@ -12,8 +12,6 @@ module mod_usr
   double precision :: au2cm  = 1.49597870691d13 ! a.u. to cm         conversion factor
   double precision :: msun2g = 1.988d33         ! solar mass to gram conversion factor
 
-  double precision, allocatable :: wini(:,:,:)
-
   ! &usr_list
   double precision :: density_slope, cavity_radius, cavity_width
   double precision :: rhozero, rhomin
@@ -169,12 +167,6 @@ contains
           call set_keplerian_angular_motion(ixI^L, ixO^L, w, x, dust_rho(n), dust_mom(2,n))
        end do
     end if
-
-    ! copy the initial state for later reuse (boundary conditions)
-    if (.not. allocated(wini)) then
-       allocate(wini(ixI^S, 1:nw))
-       wini = w
-    end if
   end subroutine initial_conditions
 
 
@@ -192,10 +184,12 @@ contains
     integer :: i
 
     call constant_boundaries(qt, ixG^L, ixB^L, iB, w, x, rho_)
+    call constant_boundaries(qt, ixG^L, ixB^L, iB, w, x, mom(1))
     call constant_boundaries(qt, ixG^L, ixB^L, iB, w, x, mom(2))
     if (hd_dust) then
        do i = 1, dust_n_species
           call constant_boundaries(qt, ixG^L, ixB^L, iB, w, x, dust_rho(i))
+          call constant_boundaries(qt, ixG^L, ixB^L, iB, w, x, dust_mom(1,i))
           call constant_boundaries(qt, ixG^L, ixB^L, iB, w, x, dust_mom(2,i))
        end do
     end if
