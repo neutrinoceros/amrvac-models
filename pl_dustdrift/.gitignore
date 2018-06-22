@@ -1,0 +1,8 @@
+*~
+*.f
+*.mod
+amrvac
+makefile
+out*
+build*
+*png
