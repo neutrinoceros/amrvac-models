@@ -21,7 +21,6 @@
   cavity_width = 12d0
   rhozero = 1d-6
   rhomin = 5d-9
-  aspect_ratio = 1d-2
 /
 
 &meshlist
@@ -54,6 +53,7 @@
 
 
 &hd_list
+  hd_adiab = 0.018
   hd_gamma = 1.4
   hd_energy = .false.
   hd_gravity = .true.
