@@ -8,30 +8,31 @@
 ! ======================================
 
 &disk_list
+    ref_radius = 1.57
     central_mass = 2.2
     wk_amp = 50d0
 /
 
 &usr_list
     density_slope = -1.0
-    cavity_radius = 157.0  ! in au, with d=157pc (Gaia 2016) and angular width ~2''
-    cavity_width = 12.0    ! au, constrained by Rayleigh and Lovelace criteria
-    rhozero = 9.2e-5
+    cavity_radius = 1.57   ! in 100au, with d=157pc (Gaia 2016) and angular width ~2''
+    cavity_width = 0.12    ! 100au, constrained by Rayleigh and Lovelace criteria
+    rhozero = 9.2e-4
     rhomin = 1e-13
 /
 
 &perturbation_list
     pert_noise = .true.
     pert_moment = 1
-    pert_amp = 0.001
+    pert_amp = 1d-2
 /
 
 ! -----------------------------------------------------------------
 
 &meshlist
     refine_max_level = 1
-    xprobmin1 = 90.0
-    xprobmax1 = 450.0
+    xprobmin1 = 0.9
+    xprobmax1 = 4.5
     domain_nx1 = 512
     block_nx1 = 128
     xprobmin2 = 0.0
@@ -57,7 +58,7 @@
 
 &hd_list
     hd_gamma = 1.666
-    hd_adiab = 1.2
+    hd_adiab = 86.4
     hd_energy = .false.
     hd_gravity = .true.
     hd_dust = .false.
@@ -69,12 +70,12 @@
 
     itsave(1, 1) = 0
     itsave(1, 2) = 0
-    dtsave_log = 6156d-1 ! 0.1 orbit at r=140
-    dtsave_dat = 6156d0  ! 1.0 orbit at r=140
+    dtsave_log = 1d-1
+    dtsave_dat = 2d0
 /
 
 &stoplist
-    time_max = 12312d0
+    time_max = 20
 /
 
 &methodlist

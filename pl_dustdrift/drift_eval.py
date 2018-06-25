@@ -21,7 +21,8 @@ class TheoCrusher:
             self.grain_sizes = np.array([grain_sizes_cm]) / au2cm
         self.rho_p = conf['usr_dust_list']['grain_density_gcm3'] / msun2g * au2cm**3
         self.gamma = conf['hd_list']['hd_gamma']
-        self.S = conf['usr_list']['aspect_ratio']**2 * conf['disk_list']['central_mass'] * conf['usr_list']['rhozero']**(1-self.gamma) / self.gamma
+        #self.S = conf['usr_list']['aspect_ratio']**2 * conf['disk_list']['central_mass'] * conf['usr_list']['rhozero']**(1-self.gamma) / self.gamma
+        self.S = conf['hd_list']['hd_adiab']
         self.A = 4/3 *np.sqrt(self.gamma/3)/(3/4)
 
         self.conf = conf
