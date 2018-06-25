@@ -8,16 +8,16 @@
 ! ======================================
 
 &disk_list
-    ref_radius = 140.0
+    ref_radius = 1.57
     central_mass = 2.2
     wk_amp = 50d0
 /
 
 &usr_list
     density_slope = -1.0
-    cavity_radius = 157.0  ! in au, with d=157pc (Gaia 2016) and angular width ~2''
-    cavity_width = 12.0    ! au, constrained by Rayleigh and Lovelace criteria
-    rhozero = 9.2e-5
+    cavity_radius = 1.57   ! in 100au, with d=157pc (Gaia 2016) and angular width ~2''
+    cavity_width = 0.12    ! 100au, constrained by Rayleigh and Lovelace criteria
+    rhozero = 9.2e-4
     rhomin = 1e-13
 /
 
@@ -31,8 +31,8 @@
 
 &meshlist
     refine_max_level = 1
-    xprobmin1 = 90.0
-    xprobmax1 = 450.0
+    xprobmin1 = 0.9
+    xprobmax1 = 4.5
     domain_nx1 = 512
     block_nx1 = 128
     xprobmin2 = 0.0
@@ -58,7 +58,7 @@
 
 &hd_list
     hd_gamma = 1.666
-    hd_adiab = 1.2
+    hd_adiab = 86.4
     hd_energy = .false.
     hd_gravity = .true.
     hd_dust = .false.

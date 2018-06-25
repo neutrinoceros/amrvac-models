@@ -10,9 +10,11 @@ module mod_usr
 
   implicit none
   ! conversion factors
+  double precision :: base_length_au = 1d2
   double precision :: au2cm  = 1.49597870691d13 ! a.u. to cm         conversion factor
   double precision :: msun2g = 1.988d33         ! solar mass to gram conversion factor
   double precision :: yr2s   = 3.1536d7         ! year to seconds
+  double precision :: unit_mass
 
   ! &usr_list
   double precision :: density_slope, cavity_radius, cavity_width
@@ -52,11 +54,12 @@ contains
     usr_process_adv_grid => wave_killing_parabolic
 
     ! Choose independent normalization units if using dimensionless variables.
-    unit_length  = au2cm                     ! 1au            (cm)
-    unit_density = msun2g / au2cm**2         ! 1M_sun / au^2  (g/cm^2)
+    unit_mass    = msun2g ! NOT A STANDARD AMRVAC VARIABLE
+    unit_length  = base_length_au * au2cm ! 100au (cm)
+    unit_density = unit_mass / unit_length**2
 
     ! orbital period at ref_radius (s)
-    unit_time = yr2s * central_mass**(-0.5) * ref_radius**3/2
+    unit_time = yr2s * central_mass**(-0.5) * (base_length_au*ref_radius)**3/2
 
     ! Activate the physics module
     call hd_activate()
@@ -104,14 +107,12 @@ contains
     double precision :: norm_density
     integer i
 
-    hd_adiab = hd_adiab* G ! test for debuging !!!!
-
     ! dust ----------------------------------
-    norm_density = msun2g/au2cm**3
+    norm_density = unit_mass / unit_length**3
     if (hd_dust) then
        do i = 1, dust_n_species
           !(au2cm)**-1 is 1cm in code units
-          dust_size(i) = grain_size_cm(i) / au2cm
+          dust_size(i) = grain_size_cm(i) / unit_length
 
           !1g/cm^3 in code unit
           dust_density(i) = grain_density_gcm3 / norm_density
@@ -120,6 +121,9 @@ contains
 
     if (mype==0) then
        print*,'User messages ======================================='
+       write(*,*), 'using G = ', G
+       write(*,*), 'using hd_adiab = ', hd_adiab
+
        if (hd_dust) then
           write(*,*), 'using ', dust_n_species, 'dust bins'
           write(*,'(a,f17.3,a)') ' gas to dust ratio = ', gas2dust_ratio
