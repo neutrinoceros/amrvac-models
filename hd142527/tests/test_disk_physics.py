@@ -52,9 +52,8 @@ def build_model(conf, model_class):
         DTDisk.r0            : usr_list['cavity_radius'],
         DTDisk.rho0          : usr_list['rhozero'],
         DTDisk.slope         : usr_list['density_slope'],
-        DTDisk.aspect_ratio0 : usr_list['aspect_ratio'],
+        DTDisk.S_adiab       : conf['hd_list']['hd_adiab'],
         DTDisk.gamma         : conf['hd_list']['hd_gamma'],
-        DTDisk.aspect_ratio0 : usr_list['aspect_ratio'],
         DTDisk.eta           : h2_viscosity_code,
         DTDisk.sp            : maxsize * cm2au,
         DTDisk.rhop          : conf['usr_dust_list']['grain_density_gcm3'] / msun2g * au2cm**3
@@ -97,7 +96,11 @@ def evaluate_disk_mass_ratio(conf, model):
     return disk_mass.evalf() / conf['disk_list']['central_mass']
 
 def get_flaring(alpha, gamma):
+    '''Mesure effective flaring exponent in scale height law (far from cavity)'''
     return 0.5 * (1 + alpha*(1-gamma))
+
+def get_aspect_ratio(gamma, S, r0, sifma0, G, mstar):
+    return np.sqrt(gamma * S * r0 * sigma0**(gamma-1) / (G*mstar))
 
 
 

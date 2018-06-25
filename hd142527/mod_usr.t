@@ -15,7 +15,6 @@ module mod_usr
   ! &usr_list
   double precision :: density_slope, cavity_radius, cavity_width
   double precision :: rhozero, rhomin
-  double precision :: aspect_ratio
 
   ! &perturbation_list
   logical :: pert_noise = .false.
@@ -69,7 +68,7 @@ contains
     character(len=*), intent(in) :: files(:)
     integer n
 
-    namelist /usr_list/ aspect_ratio,&
+    namelist /usr_list/ &
          cavity_radius, cavity_width,&
          rhozero, rhomin, density_slope
 
@@ -99,8 +98,6 @@ contains
     ! .. local ..
     double precision :: norm_density
     integer i
-
-    hd_adiab = aspect_ratio**2/hd_gamma * rhozero**(one-hd_gamma)
     ! dust ----------------------------------
     norm_density = msun2g/au2cm**3
     if (hd_dust) then
@@ -114,9 +111,7 @@ contains
     end if
 
     if (mype==0) then
-       print*,'====================================================='
-       print*, 'User specific parameters'
-       write(*,'(a,f17.3,a)') ' HD_ADIAB = ', hd_adiab
+       print*,'User messages ======================================='
        if (hd_dust) then
           write(*,*), 'using ', dust_n_species, 'dust bins'
           write(*,'(a,f17.3,a)') ' gas to dust ratio = ', gas2dust_ratio

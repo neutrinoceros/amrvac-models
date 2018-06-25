@@ -11,7 +11,6 @@
     density_slope = -1.0
     rhozero = 9.2e-5
     rhomin = 1e-13
-    aspect_ratio = 0.065
 /
 
 
@@ -33,6 +32,7 @@
 /
 
 &hd_list
+    hd_adiab = 1.244
     hd_gamma = 1.6666666
     hd_energy = .false.
     hd_gravity = .true.

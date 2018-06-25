@@ -9,6 +9,7 @@
 
 &disk_list
     central_mass = 2.2
+    wk_amp = 50d0
 /
 
 &usr_list
@@ -17,8 +18,6 @@
     cavity_width = 12.0    ! au, constrained by Rayleigh and Lovelace criteria
     rhozero = 9.2e-5
     rhomin = 1e-13
-    aspect_ratio = 0.065    ! constrained by Rayleigh criterion
-    wk_amp = 50d0
 /
 
 &perturbation_list
@@ -58,6 +57,7 @@
 
 &hd_list
     hd_gamma = 1.666
+    hd_adiab = 1.2
     hd_energy = .false.
     hd_gravity = .true.
     hd_dust = .false.
@@ -74,7 +74,7 @@
 /
 
 &stoplist
-    time_max = 1837680d0 ! 30 orbit at r=140
+    time_max = 12312d0
 /
 
 &methodlist
