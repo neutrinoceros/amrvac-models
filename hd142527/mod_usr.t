@@ -9,8 +9,10 @@ module mod_usr
   use mod_constants
 
   implicit none
+  ! conversion factors
   double precision :: au2cm  = 1.49597870691d13 ! a.u. to cm         conversion factor
   double precision :: msun2g = 1.988d33         ! solar mass to gram conversion factor
+  double precision :: yr2s   = 3.1536d7         ! year to seconds
 
   ! &usr_list
   double precision :: density_slope, cavity_radius, cavity_width
@@ -33,7 +35,7 @@ contains
   subroutine usr_init()
     use mod_global_parameters
     use mod_usr_methods
-    use mod_disk_parameters, only: read_disk_parameters
+    use mod_disk_parameters, only: read_disk_parameters, central_mass, ref_radius
     use mod_disk_phys, only: central_gravity
     use mod_disk_boundaries, only: wave_killing_parabolic
 
@@ -52,7 +54,9 @@ contains
     ! Choose independent normalization units if using dimensionless variables.
     unit_length  = au2cm                     ! 1au            (cm)
     unit_density = msun2g / au2cm**2         ! 1M_sun / au^2  (g/cm^2)
-    unit_time    = 3.1536d7 / (2.0d0*dpi)    ! (2pi)^-1 yr    (s)
+
+    ! orbital period at ref_radius (s)
+    unit_time = yr2s * central_mass**(-0.5) * ref_radius**3/2
 
     ! Activate the physics module
     call hd_activate()
@@ -94,10 +98,14 @@ contains
   subroutine parameters()
     ! Overwrite some default parameters.
     use mod_dust, only: dust_n_species, dust_density, dust_size
+    use mod_disk_parameters, only: G
     use mod_global_parameters
     ! .. local ..
     double precision :: norm_density
     integer i
+
+    hd_adiab = hd_adiab* G ! test for debuging !!!!
+
     ! dust ----------------------------------
     norm_density = msun2g/au2cm**3
     if (hd_dust) then
