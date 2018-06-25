@@ -90,19 +90,23 @@ ys1 = map_functions(fs1, sample1)
 axes[0].plot(sample0, ys0['density'])
 axes[0].set_ylabel(r'$\rho(r)$')
 
-axes[1].plot(sample0, ys0['rayleigh'], label=r'$\partial_r (r^2\Omega)$')
+axes[1].plot(sample0, ys0['rayleigh'])
+axes[1].set_ylabel(r'$\partial_r (r^2\Omega)$')
 xlims = axes[1].get_xlim()
 axes[1].plot(np.linspace(*xlims, 2), np.zeros(2), ls=':', lw=0.5, c='k')
 axes[1].set_xlim(xlims)
 
-axes[2].plot(sample1, ys1['lovelace'], label=r'$L(r)$')
-axes[2].plot(sample1, ys1['dlovelace'], ls='--', label=r'$\partial_r L(r)$')
+axes[2].plot(sample1, ys1['lovelace'])
+axt = axes[2].twinx()
+axt.plot(sample1, ys1['dlovelace'], ls='--', c='k')
+axes[2].set_ylabel(r'$L(r)$')
+axt.set_ylabel(r'$\partial_r L(r)$')
+
 for ax in axes:
     #mark the cavity location and add legends
     ylims = ax.get_ylim()
     ax.plot(usr['cavity_radius']*np.ones(2), np.linspace(*ylims, 2), ls=':', lw=0.5, c='k')
     ax.set_ylim(*ylims)
-    ax.legend()
 axes[-1].set_xlabel(r'$r$')
 #fig.savefig(str(out/'rayleigh_lovelace.eps'), dpi=900, bbox_tight=True)
 fig.savefig(str(out/'rayleigh_lovelace.png'), bbox_tight=True)

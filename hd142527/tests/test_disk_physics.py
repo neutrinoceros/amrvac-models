@@ -48,6 +48,7 @@ def build_model(conf, model_class):
         maxsize = conf['usr_dust_list']['grain_size_cm']
     my_subs = {
         DTDisk.star_mass     : conf['disk_list']['central_mass'],
+        DTDisk.G             : (2*sp.pi)**2 * conf['disk_list']['ref_radius']**3/conf['disk_list']['central_mass'],
         DTDisk.sig           : usr_list['cavity_width'],
         DTDisk.r0            : usr_list['cavity_radius'],
         DTDisk.rho0          : usr_list['rhozero'],
