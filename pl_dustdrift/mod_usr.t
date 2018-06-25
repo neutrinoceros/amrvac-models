@@ -15,7 +15,6 @@ module mod_usr
   ! &usr_list
   double precision :: density_slope, cavity_radius, cavity_width
   double precision :: rhozero, rhomin
-  double precision :: aspect_ratio
 
   ! &usr_dust_list
   ! custom dust parameters
@@ -64,8 +63,8 @@ contains
     character(len=*), intent(in) :: files(:)
     integer n
 
-    namelist /usr_list/ aspect_ratio,&
-         rhozero, rhomin, density_slope
+    namelist /usr_list/ rhozero, rhomin,&
+         density_slope
 
     namelist /usr_dust_list/ gas2dust_ratio,&
          grain_density_gcm3, grain_size_cm
@@ -89,7 +88,6 @@ contains
     double precision :: norm_density
     integer i
 
-    hd_adiab = aspect_ratio**2/hd_gamma * rhozero**(one-hd_gamma)
     ! dust ----------------------------------
     norm_density = msun2g/au2cm**3
     if (hd_dust) then
