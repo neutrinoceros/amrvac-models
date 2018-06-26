@@ -92,7 +92,7 @@ class TheoCrusher:
 
     def get_theo_phi_drift(self, dust_index:int, stokes_method='base'):
         '''from (Chiang & Youdin 2010) eq 14'''
-        St = self.get_stokes(dust_index, stokes_method)
+        St = self.get_stoœkes(dust_index, stokes_method)
         return self.get_theo_r_drift(dust_index, stokes_method) / (2*St)
 
 # ----------------------------------------------------------------------
@@ -114,15 +114,15 @@ lss = ['--', ':', '-.', '-', '--']
 
 for i, ls in enumerate(lss):
     vrd   = dh[f'v1d{i+1}']
-    vphid = dh[f'v2d{i+1}'] / rvect
-    delta_r = vrd-vrg
-    delta_phi = (vphid - vphig) / rvect
+    vphid = dh[f'v2d{i+1}']
+    delta_vr = vrd-vrg
+    delta_vphi = (vphid - vphig) / rvect
 
     qties = [
         (r'$v_r$', vrd),
-        (r'$\delta v_r$ (d-g)', delta_r),
-        (r'$(v_\varphi - v_K)/r$', vphid - vK),
-        (r'$(\delta v_\varphi)/r$ (d-g)', delta_phi),
+        (r'$\delta v_r$ (d-g)', delta_vr),
+        (r'$(v_\varphi - v_K)$', (vphid - vK)),
+        (r'$(\delta v_\varphi)/r$ (d-g)', delta_vphi),
         (r'$\dot{r}$ th', tc.get_theo_r_drift(i)),
         (r'$\dot{r}$ th (mod)', tc.get_theo_r_drift(i, 'mod')),
         (r'$\dot{\varphi}$ th', tc.get_theo_phi_drift(i)),
@@ -137,8 +137,9 @@ for i, ls in enumerate(lss):
 
 axes[0,0].plot(rvect, vrg, c='k')
 axes[0,0].legend()
-axes[0,2].plot(rvect, (vphig-vK)/rvect, c='k')
 
+axes[0,2].plot(rvect, (vphig-vK), c='k')
+axes[0,2].set_ylim((vphig-vK).min(), 0.0)
 for ax in axes[-1]:
     ax.set_yscale('log')
 
