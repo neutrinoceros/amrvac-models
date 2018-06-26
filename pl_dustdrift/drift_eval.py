@@ -1,16 +1,21 @@
+'''Plot the expected and effective drift rates (g/d velocity
+discrepency) and different evaluations of the Stokes numbers (with
+respect to r)
+'''
+
 from vtk_vacreader import VacDataSorter
 
 import numpy as np
 import matplotlib.pyplot as plt
 import f90nml
 
+# raw conversion factors
 au2cm = 8*60*3e10
 msun2g = 2e33
 
 class TheoCrusher:
     '''Use numerical data on gas velocity to predict the dust drift 
     based on equations 13, 14 in (Chiang & Youdin 2010)'''
-
 
     def __init__(self, namelist_file, dataholder):
         conf = f90nml.read(namelist_file)
@@ -21,17 +26,25 @@ class TheoCrusher:
             self.grain_sizes = np.array([grain_sizes_cm]) / au2cm
         self.rho_p = conf['usr_dust_list']['grain_density_gcm3'] / msun2g * au2cm**3
         self.gamma = conf['hd_list']['hd_gamma']
-        #self.S = conf['usr_list']['aspect_ratio']**2 * conf['disk_list']['central_mass'] * conf['usr_list']['rhozero']**(1-self.gamma) / self.gamma
         self.S = conf['hd_list']['hd_adiab']
         self.A = 4/3 *np.sqrt(self.gamma/3)/(3/4)
+
+        try:
+            self.ri = conf['disk_list']['ref_radius']
+        except KeyError:
+            self.ri = 1
+        self.mstar = conf['disk_list']['central_mass']
+        self.G = 4*np.pi**2 * self.ri**3 / self.mstar
 
         self.conf = conf
         self.data = dataholder
 
     def get_sound_speed(self):
+        '''Get dimensionless soundspeed from dimensionless SURFACE density'''
         return np.sqrt(self.gamma * self.S * self.data['rho']**(self.gamma-1))
 
     def get_stopping_time(self, dust_index:int, Akey:str='amrvac'):
+        '''dimensionless stopping time'''
         rhog = self.data['rho']
         sp = self.grain_sizes[dust_index]
         cs = self.get_sound_speed()
@@ -40,7 +53,7 @@ class TheoCrusher:
 
     def get_keplerian_pulsation(self):
         r = self.data.get_ticks(0)
-        OmegaK = np.sqrt(self.conf['disk_list']['central_mass'] / r**3)
+        OmegaK = np.sqrt(self.G * self.mstar / r**3)
         return OmegaK
 
     def get_stokes(self, dust_index:int, stokes_method='base'):
@@ -52,7 +65,7 @@ class TheoCrusher:
         elif stokes_method == 'mod':
             sigmag = self.data['rho']
             sp = self.grain_sizes[dust_index]
-            St = np.sqrt(2) * self.A * self.rho_p*sp / sigmag
+            St = np.sqrt(2*np.pi) * self.A * self.rho_p*sp / sigmag
         return St
 
     def get_theo_r_drift(self, dust_index:int, stokes_method='base'):
@@ -60,7 +73,7 @@ class TheoCrusher:
         Omega_K = self.get_keplerian_pulsation()
         vK = Omega_K * r
         vtg = self.data['m2'] / self.data['rho']
-        eta = (vK - vtg)/ vK
+        eta = (vK - vtg) / vK
         St = self.get_stokes(dust_index, stokes_method)
         return -2 * eta * Omega_K * r * St / (1 + St**2)
 
@@ -73,13 +86,13 @@ titles = [
     r'$\delta v_r$ (d-g)',
     r'$\dot{r}$ th',
     r'$\dot{r}$ th (mod)',
-    r'$St$ th',
-    r'$St$ th (mod)',
+    r'$\mathrm{St}$ th',
+    r'$\mathrm{St}$ th (mod)',
 ]
 for ax, tit in zip(axes.flatten(), titles):
     ax.set_title(tit)
 
-dh = VacDataSorter(f'out_1D/pl_drift0010.vtu')
+dh = VacDataSorter(f'out/pl_drift0010.vtu')
 tc = TheoCrusher('conf1D.nml', dh)
 
 vrg = dh['m1']/dh['rho']

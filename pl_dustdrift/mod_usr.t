@@ -83,6 +83,7 @@ contains
   subroutine parameters()
     ! Overwrite some default parameters.
     use mod_dust, only: dust_n_species, dust_density, dust_size
+    use mod_disk_parameters, only: G
     use mod_global_parameters
     ! .. local ..
     double precision :: norm_density
@@ -104,6 +105,7 @@ contains
        print*,'====================================================='
        print*, 'User specific parameters'
        write(*,'(a,f17.3,a)') ' HD_ADIAB = ', hd_adiab
+       write(*,'(a,f17.3,a)') ' G = ', G
        if (hd_dust) then
           write(*,*), 'using ', dust_n_species, 'dust bins'
           write(*,'(a,f17.3,a)') ' gas to dust ratio = ', gas2dust_ratio
