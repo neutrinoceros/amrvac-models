@@ -92,7 +92,7 @@ class TheoCrusher:
 
     def get_theo_phi_drift(self, dust_index:int, stokes_method='base'):
         '''from (Chiang & Youdin 2010) eq 14'''
-        St = self.get_stoœkes(dust_index, stokes_method)
+        St = self.get_stokes(dust_index, stokes_method)
         return self.get_theo_r_drift(dust_index, stokes_method) / (2*St)
 
 # ----------------------------------------------------------------------
