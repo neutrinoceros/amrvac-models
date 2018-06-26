@@ -3,18 +3,31 @@ discrepency) and different evaluations of the Stokes numbers (with
 respect to r)
 '''
 
-from vtk_vacreader import VacDataSorter
+from vtk_vacreader import VacDataSorter as VDS
 
 import numpy as np
 import matplotlib.pyplot as plt
 import f90nml
 
 # raw conversion factors
-au2cm = 8*60*3e10
+au2cm = 8*60*3e10 #1au (cm)
 msun2g = 2e33
 
+
+class VelVDS(VDS):
+    '''Replace moments with velocities'''
+    def __init__(self, file_name:str, data_shape:tuple=None):
+        super().__init__(file_name, data_shape)
+        keys = [k for k in self.fields.keys()]
+        for k in keys:
+            if 'm' in k:
+                tag = k[1:]
+                vkey = 'v' + tag
+                self.fields.update({vkey: self[k]/self['rho'+tag[1:]]})
+                self.fields.pop(k)
+
 class TheoCrusher:
-    '''Use numerical data on gas velocity to predict the dust drift 
+    '''Use numerical data on gas velocity to predict the dust drift
     based on equations 13, 14 in (Chiang & Youdin 2010)'''
 
     def __init__(self, namelist_file, dataholder):
@@ -43,7 +56,7 @@ class TheoCrusher:
         '''Get dimensionless soundspeed from dimensionless SURFACE density'''
         return np.sqrt(self.gamma * self.S * self.data['rho']**(self.gamma-1))
 
-    def get_stopping_time(self, dust_index:int, Akey:str='amrvac'):
+    def get_stopping_time(self, dust_index:int):
         '''dimensionless stopping time'''
         rhog = self.data['rho']
         sp = self.grain_sizes[dust_index]
@@ -69,55 +82,64 @@ class TheoCrusher:
         return St
 
     def get_theo_r_drift(self, dust_index:int, stokes_method='base'):
+        '''from (Chiang & Youdin 2010) eq 13'''
         r = self.data.get_ticks(0)
         Omega_K = self.get_keplerian_pulsation()
-        vK = Omega_K * r
-        vtg = self.data['m2'] / self.data['rho']
+        vtg = self.data['v2']
         eta = (vK - vtg) / vK
         St = self.get_stokes(dust_index, stokes_method)
         return -2 * eta * Omega_K * r * St / (1 + St**2)
 
+    def get_theo_phi_drift(self, dust_index:int, stokes_method='base'):
+        '''from (Chiang & Youdin 2010) eq 14'''
+        St = self.get_stokes(dust_index, stokes_method)
+        return self.get_theo_r_drift(dust_index, stokes_method) / (2*St)
 
 # ----------------------------------------------------------------------
-fig, axes = plt.subplots(nrows=3, ncols=2, sharex=True, figsize=(10,10))
+fig, axes = plt.subplots(nrows=3, ncols=4, sharex=True, figsize=(20,10))
 
-titles = [
-    r'$v_r$',
-    r'$\delta v_r$ (d-g)',
-    r'$\dot{r}$ th',
-    r'$\dot{r}$ th (mod)',
-    r'$\mathrm{St}$ th',
-    r'$\mathrm{St}$ th (mod)',
-]
-for ax, tit in zip(axes.flatten(), titles):
-    ax.set_title(tit)
+#G = (2*np.pi)**2  # ONLY VALID IF central_mass and ref_radius are unity !!!!!!
+#mydims = {'M': 2e33, 'L': 8*60*3e10, 'T': 2*np.pi*np.sqrt(1/(G*2e33))}
+#dh = DimLessVDS(mydims, file_name=f'out/pl_drift0010.vtu')
+dh  = VelVDS(file_name=f'out/pl_drift0010.vtu')
 
-dh = VacDataSorter(f'out/pl_drift0010.vtu')
 tc = TheoCrusher('conf1D.nml', dh)
 
-vrg = dh['m1']/dh['rho']
 rvect = dh.get_ticks()
+vK = tc.get_keplerian_pulsation()*rvect
+vrg = dh['v1']
+vphig = dh['v2']
+
 lss = ['--', ':', '-.', '-', '--']
+
 for i, ls in enumerate(lss):
-    vrd = dh[f'm1d{i+1}']/dh[f'rhod{i+1}']
-    delta = vrd-vrg
+    vrd   = dh[f'v1d{i+1}']
+    vphid = dh[f'v2d{i+1}'] / rvect
+    delta_r = vrd-vrg
+    delta_phi = (vphid - vphig) / rvect
+
     qties = [
-        delta,
-        tc.get_theo_r_drift(i),
-        tc.get_theo_r_drift(i, 'mod'),
-        tc.get_stokes(i),
-        tc.get_stokes(i, 'mod'),
+        (r'$v_r$', vrd),
+        (r'$\delta v_r$ (d-g)', delta_r),
+        (r'$(v_\varphi - v_K)/r$', vphid - vK),
+        (r'$(\delta v_\varphi)/r$ (d-g)', delta_phi),
+        (r'$\dot{r}$ th', tc.get_theo_r_drift(i)),
+        (r'$\dot{r}$ th (mod)', tc.get_theo_r_drift(i, 'mod')),
+        (r'$\dot{\varphi}$ th', tc.get_theo_phi_drift(i)),
+        (r'$\dot{\varphi}$ th (mod)', tc.get_theo_phi_drift(i, 'mod')),
+        (r'$\mathrm{St}$ th', tc.get_stokes(i)),
+        (r'$\mathrm{St}$ th (mod)', tc.get_stokes(i, 'mod')),
     ]
-    
-    axes[0,0].plot(rvect, vrd, ls=ls, label=str(i+1))
-    for ax, qty in zip(axes.flatten()[1:], qties):
-        ax.plot(rvect, qty, ls=ls)
+
+    for ax, (tit, field) in zip(axes.flatten(), qties):
+        ax.plot(rvect, field, ls=ls, label=str(i+1))
+        ax.set_title(tit)
 
 axes[0,0].plot(rvect, vrg, c='k')
 axes[0,0].legend()
+axes[0,2].plot(rvect, (vphig-vK)/rvect, c='k')
+
 for ax in axes[-1]:
     ax.set_yscale('log')
 
 fig.savefig(f'{__file__}.png')
-
-#dh2D = VacDataSorter(f'out_kwok/pl_drift0070.vtu', data_shape=(512,128))

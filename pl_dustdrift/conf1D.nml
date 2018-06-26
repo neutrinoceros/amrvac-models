@@ -18,7 +18,7 @@
 
 &meshlist
     refine_max_level = 1
-    xprobmin1 = 10.0
+    xprobmin1 = 1.0
     xprobmax1 = 100.0
     domain_nx1 = 512
     block_nx1 = 256
@@ -64,12 +64,12 @@
 &savelist
     itsave(1, 1) = 0
     itsave(1, 2) = 0
-    dtsave_log = 22e-2
-    dtsave_dat = 22d2 ! 100.0 orbit at r=10
+    dtsave_log = 1d0
+    dtsave_dat = 1d2
 /
 
 &stoplist
-    time_max = 22d3
+    time_max = 1d3
 /
 
 &methodlist
