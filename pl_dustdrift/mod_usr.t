@@ -11,7 +11,7 @@ module mod_usr
   implicit none
   double precision :: au2cm  = 1.49597870691d13 ! a.u. to cm         conversion factor
   double precision :: msun2g = 1.988d33         ! solar mass to gram conversion factor
-
+  double precision :: yr2s = 3.1536d7
   ! &usr_list
   double precision :: density_slope, cavity_radius, cavity_width
   double precision :: rhozero, rhomin
@@ -47,7 +47,7 @@ contains
     ! Choose independent normalization units if using dimensionless variables.
     unit_length  = au2cm                     ! 1au            (cm)
     unit_density = msun2g / au2cm**2         ! 1M_sun / au^2  (g/cm^2)
-    unit_time    = 3.1536d7 / (2.0d0*dpi)    ! (2pi)^-1 yr    (s)
+    unit_time    = yr2s
 
     ! Activate the physics module
     call hd_activate()
