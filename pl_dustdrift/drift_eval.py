@@ -2,7 +2,6 @@
 discrepency) and different evaluations of the Stokes numbers (with
 respect to r)
 '''
-
 import itertools as itt
 from vtk_vacreader import VacDataSorter as VDS
 
@@ -99,7 +98,7 @@ class TheoCrusher:
 # ----------------------------------------------------------------------
 
 
-offs = (0, 1, 10)
+offs = (0, 1, 10, 100)
 for n in offs:
     dh = VelVDS(file_name=f'out/pl_drift{str(n).zfill(4)}.vtu')
     fig, axes = plt.subplots(nrows=3, ncols=4, sharex=True, figsize=(20,10))
@@ -117,7 +116,7 @@ for n in offs:
         vphid = dh[f'v2d{i+1}']
         delta_vr = vrd-vrg
         delta_vphi = (vphid - vphig) / rvect
-
+        rhod =  dh[f'rhod{i+1}']
         qties = [
             (r'$v_r$', vrd),
             (r'$\delta v_r$ (d-g)', delta_vr),
@@ -129,6 +128,7 @@ for n in offs:
             (r'$\dot{\varphi}$ th (mod)', tc.get_theo_phi_drift(i, 'mod')),
             (r'$\mathrm{St}$ th', tc.get_stokes(i)),
             (r'$\mathrm{St}$ th (mod)', tc.get_stokes(i, 'mod')),
+            (r'rho dust', rhod),
         ]
 
         for ax, (tit, field) in zip(axes.flatten(), qties):
@@ -140,8 +140,15 @@ for n in offs:
 
     axes[0,2].plot(rvect, (vphig-vK), c='k')
     for ax in itt.chain(axes[0:2,2], axes[0:2,3]): #vphi
-        ax.set_ylim(-4e-4, 1e-4)
+        ax.set_ylim(-3e-4, 1e-4)
 
+    #vr
+    axes[0,0].set_ylim(-1.2e-7, 1e-8)
+    axes[0,1].set_ylim(-6e-8, 1e-8)
+
+    #axes[2,2].set_yscale('linear')
+    #axes[2,2].plot(rvect, tc.get_sound_speed()/(rvect*tc.get_keplerian_pulsation()))
+    axes[2,2].plot(rvect, dh['rho'], c='k')
     for ax in axes[-1]:
         ax.set_yscale('log')
 
