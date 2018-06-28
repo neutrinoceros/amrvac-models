@@ -1,0 +1,11 @@
+&filelist
+restart_from_file = 'pl_drift0001.dat'
+/
+
+&stoplist
+time_max = 2e4
+/
+
+&dust_list
+dust_method='Kwok'
+/
