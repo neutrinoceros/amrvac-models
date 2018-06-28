@@ -18,7 +18,7 @@
 
 &meshlist
     refine_max_level = 1
-    xprobmin1 = 1.0
+    xprobmin1 = 10.0
     xprobmax1 = 100.0
     domain_nx1 = 512
     block_nx1 = 256
@@ -56,8 +56,8 @@
 
 &boundlist
     nghostcells = 2
-    typeboundary_min1 = 'special', 'cont', 'special', 15*'cont'
-    typeboundary_max1 = 'special', 'noinflow', 'special', 15*'cont'
+    typeboundary_min1 = 3*'special', 15*'special'
+    typeboundary_max1 = 3*'special', 15*'special'
 /
 
 
