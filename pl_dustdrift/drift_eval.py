@@ -3,6 +3,7 @@ discrepency) and different evaluations of the Stokes numbers (with
 respect to r)
 '''
 
+import itertools as itt
 from vtk_vacreader import VacDataSorter as VDS
 
 import numpy as np
@@ -96,51 +97,52 @@ class TheoCrusher:
         return self.get_theo_r_drift(dust_index, stokes_method) / (2*St)
 
 # ----------------------------------------------------------------------
-fig, axes = plt.subplots(nrows=3, ncols=4, sharex=True, figsize=(20,10))
 
-#G = (2*np.pi)**2  # ONLY VALID IF central_mass and ref_radius are unity !!!!!!
-#mydims = {'M': 2e33, 'L': 8*60*3e10, 'T': 2*np.pi*np.sqrt(1/(G*2e33))}
-#dh = DimLessVDS(mydims, file_name=f'out/pl_drift0010.vtu')
-dh  = VelVDS(file_name=f'out/pl_drift0010.vtu')
 
-tc = TheoCrusher('conf1D.nml', dh)
+offs = (0, 1, 10)
+for n in offs:
+    dh = VelVDS(file_name=f'out/pl_drift{str(n).zfill(4)}.vtu')
+    fig, axes = plt.subplots(nrows=3, ncols=4, sharex=True, figsize=(20,10))
+    tc = TheoCrusher('conf1D.nml', dh)
 
-rvect = dh.get_ticks()
-vK = tc.get_keplerian_pulsation()*rvect
-vrg = dh['v1']
-vphig = dh['v2']
+    rvect = dh.get_ticks()
+    vK = tc.get_keplerian_pulsation()*rvect
+    vrg = dh['v1']
+    vphig = dh['v2']
 
-lss = ['--', ':', '-.', '-', '--']
+    lss = ['--', ':', '-.', '-', '--']
 
-for i, ls in enumerate(lss):
-    vrd   = dh[f'v1d{i+1}']
-    vphid = dh[f'v2d{i+1}']
-    delta_vr = vrd-vrg
-    delta_vphi = (vphid - vphig) / rvect
+    for i, ls in enumerate(lss):
+        vrd   = dh[f'v1d{i+1}']
+        vphid = dh[f'v2d{i+1}']
+        delta_vr = vrd-vrg
+        delta_vphi = (vphid - vphig) / rvect
 
-    qties = [
-        (r'$v_r$', vrd),
-        (r'$\delta v_r$ (d-g)', delta_vr),
-        (r'$(v_\varphi - v_K)$', (vphid - vK)),
-        (r'$(\delta v_\varphi)/r$ (d-g)', delta_vphi),
-        (r'$\dot{r}$ th', tc.get_theo_r_drift(i)),
-        (r'$\dot{r}$ th (mod)', tc.get_theo_r_drift(i, 'mod')),
-        (r'$\dot{\varphi}$ th', tc.get_theo_phi_drift(i)),
-        (r'$\dot{\varphi}$ th (mod)', tc.get_theo_phi_drift(i, 'mod')),
-        (r'$\mathrm{St}$ th', tc.get_stokes(i)),
-        (r'$\mathrm{St}$ th (mod)', tc.get_stokes(i, 'mod')),
-    ]
+        qties = [
+            (r'$v_r$', vrd),
+            (r'$\delta v_r$ (d-g)', delta_vr),
+            (r'$(v_\varphi - v_K)$', (vphid - vK)),
+            (r'$(\delta v_\varphi)/r$ (d-g)', delta_vphi),
+            (r'$\dot{r}$ th', tc.get_theo_r_drift(i)),
+            (r'$\dot{r}$ th (mod)', tc.get_theo_r_drift(i, 'mod')),
+            (r'$\dot{\varphi}$ th', tc.get_theo_phi_drift(i)),
+            (r'$\dot{\varphi}$ th (mod)', tc.get_theo_phi_drift(i, 'mod')),
+            (r'$\mathrm{St}$ th', tc.get_stokes(i)),
+            (r'$\mathrm{St}$ th (mod)', tc.get_stokes(i, 'mod')),
+        ]
 
-    for ax, (tit, field) in zip(axes.flatten(), qties):
-        ax.plot(rvect, field, ls=ls, label=str(i+1))
-        ax.set_title(tit)
+        for ax, (tit, field) in zip(axes.flatten(), qties):
+            ax.plot(rvect, field, ls=ls, label=str(i+1))
+            ax.set_title(tit)
 
-axes[0,0].plot(rvect, vrg, c='k')
-axes[0,0].legend()
+    axes[0,0].plot(rvect, vrg, c='k')
+    axes[0,0].legend()
 
-axes[0,2].plot(rvect, (vphig-vK), c='k')
-axes[0,2].set_ylim((vphig-vK).min(), 0.0)
-for ax in axes[-1]:
-    ax.set_yscale('log')
+    axes[0,2].plot(rvect, (vphig-vK), c='k')
+    for ax in itt.chain(axes[0:2,2], axes[0:2,3]): #vphi
+        ax.set_ylim(-4e-4, 1e-4)
 
-fig.savefig(f'{__file__}.png')
+    for ax in axes[-1]:
+        ax.set_yscale('log')
+
+    fig.savefig(f'diag{n}.png')
