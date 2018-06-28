@@ -104,11 +104,11 @@ contains
     if (mype==0) then
        print*,'====================================================='
        print*, 'User specific parameters'
-       write(*,'(a,f17.3,a)') ' HD_ADIAB = ', hd_adiab
-       write(*,'(a,f17.3,a)') ' G = ', G
+       write(*,'(a,ES9.3)') ' HD_ADIAB = ', hd_adiab
+       write(*,'(a,ES9.3)') ' G/4pi^2  = ', G/(two*dpi)**2
        if (hd_dust) then
-          write(*,*), 'using ', dust_n_species, 'dust bins'
-          write(*,'(a,f17.3,a)') ' gas to dust ratio = ', gas2dust_ratio
+          write(*,'(a,ES9.2)') ' gas/dust ratio = ', gas2dust_ratio
+          write(*,'(a,I5,a)'), ' over', dust_n_species, ' bins'
        end if
        print*,'====================================================='
     end if
