@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
-set -eu
+
 
 pushd .
 
-cd build1D/
-make
+mkdir build
+cd build
+ln -s ../mod_usr.t mod_usr.t
+$AMRVAC_DIR/setup.pl -d 1 -arch default
+
+set -eu
+
+make -j 4
 cd ~1
 
-
 cd out/
-
-mpirun -n 4 ../build1D/amrvac -i ../conf1D.nml ../first.par
-mpirun -n 4 ../build1D/amrvac -i ../conf1D.nml ../second.par
+cp ../build/amrvac .
+mpirun -n 4 amrvac -i ../conf1D.nml ../first.par
+mpirun -n 4 amrvac -i ../conf1D.nml ../second.par

@@ -1,7 +1,10 @@
+#!/usr/bin/env python3
+
 '''Plot the expected and effective drift rates (g/d velocity
 discrepency) and different evaluations of the Stokes numbers (with
 respect to r)
 '''
+from argparse import ArgumentParser
 import itertools as itt
 from vtk_vacreader import VacDataSorter as VDS
 
@@ -97,10 +100,14 @@ class TheoCrusher:
 
 # ----------------------------------------------------------------------
 
+ap = ArgumentParser()
+ap.add_argument('-o', dest='out', type=str, default='.')
+args = ap.parse_args()
+out = args.out
 
-offs = (0, 1, 10, 100)
+offs = (0, 1, 5, 10, 18)
 for n in offs:
-    dh = VelVDS(file_name=f'out/pl_drift{str(n).zfill(4)}.vtu')
+    dh = VelVDS(file_name=f'{out}/pl_drift{str(n).zfill(4)}.vtu')
     fig, axes = plt.subplots(nrows=3, ncols=4, sharex=True, figsize=(20,10))
     tc = TheoCrusher('conf1D.nml', dh)
 
@@ -108,10 +115,10 @@ for n in offs:
     vK = tc.get_keplerian_pulsation()*rvect
     vrg = dh['v1']
     vphig = dh['v2']
-
+    dust_n_species = len([k for k in dh.fields.keys() if 'd' in k and 'rho' in k])
     lss = ['--', ':', '-.', '-', '--']
 
-    for i, ls in enumerate(lss):
+    for i, ls in zip(range(dust_n_species), lss):
         vrd   = dh[f'v1d{i+1}']
         vphid = dh[f'v2d{i+1}']
         delta_vr = vrd-vrg
