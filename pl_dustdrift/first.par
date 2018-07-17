@@ -1,0 +1,11 @@
+&savelist
+dtsave_dat = 5e4
+/
+
+&stoplist
+time_max = 5e4
+/
+
+&dust_list
+dust_method='none'
+/
