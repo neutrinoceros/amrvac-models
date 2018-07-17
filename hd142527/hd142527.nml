@@ -81,7 +81,7 @@
 &methodlist
     small_density = 1e-15
     time_integrator = 'twostep'
-    flux_scheme = 20*'hllc'
+    flux_scheme = 20*'hll'
     limiter = 20*'koren'
     gradient_limiter = 20*'koren'
 /
