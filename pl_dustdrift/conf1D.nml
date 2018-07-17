@@ -40,7 +40,7 @@
 /
 
 &dust_list
-  dust_n_species = 1
+  dust_n_species = 3
   gas_mu = 2d0
   dust_temperature = 0d0
   dust_min_rho = 1d-15
@@ -51,13 +51,13 @@
 &usr_dust_list
   gas2dust_ratio = 1d2
   grain_density_gcm3 = 1d0
-  grain_size_cm = 1d4 !, 1d3, 1d2, 1d1, 1d0
+  grain_size_cm = 1d4, 1d3, 1d2!, 1d1, 1d0
 /
 
 &boundlist
     nghostcells = 2
-    typeboundary_min1 = 3*'special', 3*'special'
-    typeboundary_max1 = 3*'special', 3*'special'
+    typeboundary_min1 = 3*'special', 9*'special'
+    typeboundary_max1 = 3*'special', 9*'special'
 /
 
 
@@ -75,7 +75,7 @@
 &methodlist
     small_density = 1e-15
     time_integrator = 'twostep'
-    flux_scheme = 20*'hllc'
+    flux_scheme = 20*'hll'
     limiter = 20*'koren'
     gradient_limiter = 20*'koren'
 /

@@ -105,7 +105,7 @@ ap.add_argument('-o', dest='out', type=str, default='.')
 args = ap.parse_args()
 out = args.out
 
-offs = (0, 1, 5, 10, 18)
+offs = (0, 1, 50, 501)
 for n in offs:
     dh = VelVDS(file_name=f'{out}/pl_drift{str(n).zfill(4)}.vtu')
     fig, axes = plt.subplots(nrows=3, ncols=4, sharex=True, figsize=(20,10))
@@ -150,7 +150,7 @@ for n in offs:
         ax.set_ylim(-3e-4, 1e-4)
 
     #vr
-    axes[0,0].set_ylim(-1.2e-7, 1e-8)
+    #axes[0,0].set_ylim(-1.2e-7, 1e-8)
     axes[0,1].set_ylim(-6e-8, 1e-8)
 
     #axes[2,2].set_yscale('linear')
