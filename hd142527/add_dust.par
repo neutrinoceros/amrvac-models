@@ -12,7 +12,8 @@
   gas_mu = 2d0
   dust_temperature = 0d0
   dust_min_rho = 1d-15
-  dust_method = 'none'    !use 'Kwok' for coupling
+  dust_method = 'none'
+  dust_small_to_zero = .true. ! mask with 0 when bellow dust_min_rho threshold
 /
 
 &usr_dust_list
