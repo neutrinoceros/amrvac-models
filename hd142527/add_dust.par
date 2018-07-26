@@ -22,10 +22,6 @@
   grain_size_cm = 1d0, 1d-1
 /
 
-&filelist
-  base_filename = 'dusty_'
-/
-
 &boundlist
   nghostcells = 2
 
