@@ -14,7 +14,7 @@
   dust_min_rho = 1d-15
   dust_method = 'none'
   dust_small_to_zero = .true. ! mask with 0 when bellow dust_min_rho threshold
-  dust_back_reaction = .false.
+  dust_backreaction = .false.
 /
 
 &usr_dust_list
