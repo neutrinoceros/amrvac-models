@@ -34,7 +34,7 @@
     xprobmin1 = 0.9
     xprobmax1 = 4.5
     domain_nx1 = 512
-    block_nx1 = 128
+    block_nx1 = 64
     xprobmin2 = 0.0
     xprobmax2 = 1.0
     domain_nx2 = 128
