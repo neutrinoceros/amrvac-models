@@ -18,6 +18,7 @@ parser.add_argument(
     '-d',
     dest='output_dir',
     type=str,
+    default='.',
     help='select output directory'
 )
 parser.add_argument(
