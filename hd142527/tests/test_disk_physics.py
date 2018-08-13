@@ -4,6 +4,7 @@ import pathlib
 
 import numpy as np
 import sympy as sp
+import pytest
 
 from amrvac_pywrap import merge_configs
 from symdisk import Disk, TransitionDisk as TDisk, DustyDisk as DDisk
@@ -41,18 +42,19 @@ class DTDisk(DDisk, TDisk):
 
 def build_model(conf, model_class):
     usr_list = conf['usr_list']
+    disk_list = conf['disk_list']
 
     if isinstance(conf['usr_dust_list']['grain_size_cm'], list):
         maxsize = max(conf['usr_dust_list']['grain_size_cm'])
     else:
         maxsize = conf['usr_dust_list']['grain_size_cm']
     my_subs = {
-        DTDisk.star_mass     : conf['disk_list']['central_mass'],
-        DTDisk.G             : (2*sp.pi)**2 * conf['disk_list']['ref_radius']**3/conf['disk_list']['central_mass'],
+        DTDisk.star_mass     : disk_list['central_mass'],
+        DTDisk.rho0          : disk_list['rho0'],
+        DTDisk.slope         : disk_list['rho_slope'],
+        DTDisk.G             : (2*sp.pi)**2 * disk_list['ref_radius']**3 / disk_list['central_mass'],
         DTDisk.sig           : usr_list['cavity_width'],
         DTDisk.r0            : usr_list['cavity_radius'],
-        DTDisk.rho0          : usr_list['rhozero'],
-        DTDisk.slope         : usr_list['density_slope'],
         DTDisk.S_adiab       : conf['hd_list']['hd_adiab'],
         DTDisk.gamma         : conf['hd_list']['hd_gamma'],
         DTDisk.eta           : h2_viscosity_code,
@@ -62,7 +64,7 @@ def build_model(conf, model_class):
     return model_class(my_subs)
 
 
-conf = merge_configs([here/'hd142527.nml', here/'add_dust.par'])
+conf = merge_configs([here/'hd142527_rphi.nml', here/'add_dust.par'])
 
 r_range = np.linspace(conf['meshlist']['xprobmin1'], conf['meshlist']['xprobmax1'], num=100)
 
@@ -130,6 +132,7 @@ def test_disk_mass_ratio():
     '''
     assert evaluate_disk_mass_ratio(conf, my_model_prime) < 0.30
 
+@pytest.mark.skip(reason='test is not relevant in 2D rphi model')
 def test_fiducial_mass():
     '''Compare an estimation of the disk mass with observations (20% margin)'''
     obs = 1e-1 #disk mass from obervations
@@ -139,7 +142,7 @@ def test_fiducial_mass():
 
 def test_effective_flaring_index():
     params = dict(
-        alpha = usr['density_slope'],
+        alpha = conf['disk_list']['rho_slope'],
         gamma = conf['hd_list']['hd_gamma']
     )
     assert not get_flaring(**params) < 0

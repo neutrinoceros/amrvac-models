@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import f90nml
 from amrvac_pywrap import ForkSimulation, merge_configs
 from vtk_vacreader import VacDataSorter
+import pytest
 
 # Globals
 # -------
@@ -35,8 +36,8 @@ dirdefs = dict(origin=here.parent, outdir=tests_dir)
 # ---------------------------
 s0 = VacDataSorter(file_name=gold1D_pref+'0000.vtu')
 s1 = VacDataSorter(file_name=gold1D_pref+'0010.vtu')
-s2D0 = VacDataSorter(file_name=gold2D_pref+'0000.vtu', data_shape=None) #can't remember the shape :/
-s2D1 = VacDataSorter(file_name=gold2D_pref+'0010.vtu', data_shape=None)
+s2D0 = VacDataSorter(file_name=gold2D_pref+'0000.vtu', shape=None) #can't remember the shape :/
+s2D1 = VacDataSorter(file_name=gold2D_pref+'0010.vtu', shape=None)
 
 def m2v(d):
     d.fields['v1'] = d['m1']/d['rho']
@@ -49,6 +50,7 @@ def err(out0, out1, k):
 
 # 1D tests
 # ========
+#@pytest.mark.skip(reason='tmp')
 def test_rerun():
     conf = f90nml.read(defs_rep/'config1D.par') #Pure integration test : no modifications.
     sim = ForkSimulation(conf=conf, tag='rerun', **dirdefs)

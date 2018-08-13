@@ -7,6 +7,8 @@
 
 &disk_list
   central_mass=1d0
+  rho_slope = -0.5d0
+  rho0 = 1d-6
 /
 
 &usr_list
@@ -16,10 +18,8 @@
 ! Those serve as default, to overwrite them, you can define your own
 ! 'usr_config.par' file containing a partially or completly modified
 ! version of this list and call it after this file.
-  density_slope = -0.5d0
   cavity_radius = 3d1
   cavity_width = 12d0
-  rhozero = 1d-6
   rhomin = 5d-9
 /
 
