@@ -1,3 +1,8 @@
-*dat
-*vtu
-*log
+*.dat
+*.vtu
+*.log
+*.png
+
+*cache/
+*build/
+*out*/
