@@ -43,12 +43,17 @@ contains
 
     call read_usr_parameters(par_files)
     ! Choose coordinate system according to user input at setup
-    {^IFONED call set_coordinate_system("polar_1.5D")}
+    {^IFONED call set_coordinate_system("polar_1.5D")
+    if (pert_noise) &
+         call mpistop("Error: pert_noise=.true. is meant for ndim >= 2")
+    }
     {^IFTWOD
     select case(trim(usr_geometry))
     case('rphi')
        call set_coordinate_system("polar_2D")
     case('rz')
+       if (pert_noise) &
+            call mpistop("Error: pert_noise=.true. is not compatible with usr_geometry='rz'")
        call set_coordinate_system("cylindrical_2.5D")
     case default
        call mpistop("Error: usr_geometry is not set. Choose 'rz' or 'rphi'.")
@@ -129,6 +134,7 @@ contains
        print*,'User messages ======================================='
        write(*,*), 'using G = ', G
        write(*,*), 'using hd_adiab = ', hd_adiab
+       write(*,*), 'using usr_geometry = ', usr_geometry
 
        if (hd_dust) then
           write(*,*), 'using ', dust_n_species, 'dust bins'
@@ -223,7 +229,9 @@ contains
     double precision, intent(in)    :: qt, x(ixG^S,1:ndim)
     double precision, intent(inout) :: w(ixG^S,1:nw)
     call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,rho_)
-    call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,mom(2))
+    call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,mom(phi_))
+    !if (z_ > 0) &
+    !     call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,mom(z_))
   end subroutine cst_bound
 
   ! Optional perturbations to the initial state
@@ -242,13 +250,11 @@ contains
     integer :: seed_size, block_index, i
     integer, allocatable :: seed(:)
 
-    {^IFONED call mpistop("Perturbations are meant for ndim >= 2")}
-
     ! seeding. We use 'mype' (the proc index) to avoid repetitions accross processes,
     ! and a calculated (azimuthal) 'block_index' of sorts to further avoid repetitions accross blocks.
     {^IFTWOD
     block_index = int(x(ixomin1, ixomin2, phi_)/(xprobmax2-xprobmin2) * domain_nx2/block_nx2)
-    }!this allow us to use variables specific to 2D without breaking compilation in 1D
+    }!this condition block allows to use variables specific to 2D without breaking compilation in 1D
     call random_seed(size=seed_size)
     allocate(seed(seed_size), source=(mype*37+(401*block_index))*[(i, i=0, seed_size-1)])
     call random_seed(put=seed)

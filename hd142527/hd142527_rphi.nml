@@ -16,10 +16,10 @@
 /
 
 &usr_list
-    cavity_radius = 1.57   ! in 100au, with d=157pc (Gaia 2016) and angular width ~2''
-    cavity_width = 0.12    ! 100au, constrained by Rayleigh and Lovelace criteria
-    rhomin = 1e-13
     usr_geometry = 'rphi'
+    cavity_radius = 1.57   ! in 100au, with d=157pc (Gaia 2016) and angular width ~2''
+    cavity_width = 0.12   ! 100au, constrained by Rayleigh and Lovelace criteria
+    rhomin = 1e-13
 /
 
 &perturbation_list
@@ -51,7 +51,7 @@
 /
 
 &filelist
-    base_filename = 'hd142527_'
+    base_filename = 'hd142527_rphi'
     convert_type = 'vtuBCCmpi'
     autoconvert = .true.
     nocartesian = .true.
