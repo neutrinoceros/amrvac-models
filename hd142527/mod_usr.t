@@ -132,9 +132,9 @@ contains
 
     if (mype==0) then
        print*,'User messages ======================================='
-       write(*,*), 'using G = ', G
-       write(*,*), 'using hd_adiab = ', hd_adiab
-       write(*,*), 'using usr_geometry = ', usr_geometry
+       write(*,*), 'G/4pi^2 = ', G/(4*dpi**2)
+       write(*,*), 'hd_adiab = ', hd_adiab
+       write(*,*), 'usr_geometry = ', usr_geometry
 
        if (hd_dust) then
           write(*,*), 'using ', dust_n_species, 'dust bins'
