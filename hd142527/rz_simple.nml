@@ -12,7 +12,7 @@
     cavity_radius = 1d-5
     cavity_width = 1d-9
     rhomin = 1e-13
-    constant_pressure = F
+    constant_pressure = T
 /
 
 ! -----------------------------------------------------------------

@@ -19,6 +19,7 @@ module mod_usr
   ! &usr_list
   double precision :: rhomin, cavity_radius, cavity_width
   character(len=std_len) :: usr_geometry
+  logical :: constant_pressure = .false. !useful for debuging
 
   ! &perturbation_list
   logical :: pert_noise = .false.
@@ -89,7 +90,8 @@ contains
     integer n
 
     namelist /usr_list/ usr_geometry, rhomin,&
-         cavity_radius, cavity_width
+         cavity_radius, cavity_width,&
+         constant_pressure
 
     namelist /perturbation_list/ pert_noise,&
          pert_moment, pert_amp
@@ -194,6 +196,7 @@ contains
          gradp_r(ixO^S) = gradp_r(ixO^S) * exp(-x(ixO^S, z_)**2 / (2d0*aspect_ratio * x(ixO^S, r_))**2)
 
     gradp_r(ixO^S) = hd_adiab * hd_gamma * w(ixO^S, rho_)**(hd_gamma-1.0d0) * gradp_r(ixO^S)
+    if (constant_pressure) gradp_r(ixO^S) = 0.0d0 !dbg
 
     if (z_ > 0) then
        w(ixO^S, mom(phi_)) = w(ixO^S, rho_) * dsqrt( &
@@ -281,5 +284,4 @@ contains
     w(ixO^S, mom(mflag)) = w(ixO^S, mom(mflag)) &
          + amps(ixO^S) * exp(-(x(ixO^S, r_) - cavity_radius)**2 / (10*cavity_width**2))
   end subroutine pert_random_noise
-
 end module mod_usr
