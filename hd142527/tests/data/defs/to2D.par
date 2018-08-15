@@ -4,6 +4,10 @@
 ! ./amrvac -i config1D.par to2D.par
 !==============================================
 
+&usr_list
+  usr_geometry = 'rphi'
+/
+
 &meshlist
   !> azimuthal domain (given in 2pi units) 
   xprobmin2 = 0.0
