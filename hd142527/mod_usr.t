@@ -262,11 +262,11 @@ contains
 
     call random_number(amps(ixO^S))
 
-    norms(ixO^S) = sqrt(w(ixO^S, mom(1))**2 + w(ixO^S, mom(2))**2)
-    amps(ixO^S) = norms(ixO^S)*(two*amps(ixO^S)-one)*scale_amp
+    norms(ixO^S) = sqrt(w(ixO^S, mom(r_))**2 + w(ixO^S, mom(phi_))**2)
+    amps(ixO^S) = norms(ixO^S) * (2d0*amps(ixO^S)-1d0) * scale_amp
 
     w(ixO^S, mom(mflag)) = w(ixO^S, mom(mflag)) &
-         + amps(ixO^S)*exp(-(x(ixO^S, r_)-cavity_radius)**2/(10*cavity_width**2))
+         + amps(ixO^S) * exp(-(x(ixO^S, r_) - cavity_radius)**2 / (10*cavity_width**2))
   end subroutine pert_random_noise
 
 end module mod_usr
