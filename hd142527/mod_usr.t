@@ -76,6 +76,7 @@ contains
     unit_time = yr2s * central_mass**(-0.5) * (base_length_au*ref_radius)**3/2
 
     call hd_activate()
+    call read_usr_dust_parameters(par_files)
     call disk_activate(hd_gravity)
   end subroutine usr_init
 
@@ -93,20 +94,32 @@ contains
     namelist /perturbation_list/ pert_noise,&
          pert_moment, pert_amp
 
+    do n = 1, size(files)
+       open(unitpar, file=trim(files(n)), status="old")
+       read(unitpar, usr_list, end=111)
+111    rewind(unitpar)
+       read(unitpar, perturbation_list, end=112)
+112    close(unitpar)
+    end do
+  end subroutine read_usr_parameters
+
+  subroutine read_usr_dust_parameters(files)
+    !> Read parameters from .par files
+    use mod_dust, only: dust_n_species
+    use mod_global_parameters, only: unitpar
+    character(len=*), intent(in) :: files(:)
+    integer n
+
     namelist /usr_dust_list/ gas2dust_ratio,&
          grain_density_gcm3, grain_size_cm
 
     allocate(grain_size_cm(dust_n_species))
     do n = 1, size(files)
        open(unitpar, file=trim(files(n)), status="old")
-       read(unitpar, usr_list, end=111)
-111    rewind(unitpar)
-       read(unitpar, perturbation_list, end=112)
-112    rewind(unitpar)
-       read(unitpar, usr_dust_list, end=113)
-113    close(unitpar)
+       read(unitpar, usr_dust_list, end=111)
+111    close(unitpar)
     end do
-  end subroutine read_usr_parameters
+  end subroutine read_usr_dust_parameters
 
 
   subroutine parameters()
