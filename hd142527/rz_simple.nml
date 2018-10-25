@@ -1,25 +1,18 @@
-! ======================================
-! trigger RWI at the edge of a cavity
-! in a transistion disk
-!
-! physical parameters are adjusted to
-! HD 142527, but we don't simulate the
-! eccentric binary here.
-! ======================================
-
 &disk_list
     ref_radius = 1.0
     central_mass = 2.2
-    aspect_ratio = 0.01
+    aspect_ratio = 0.05
     rho_slope = -1.0
     rho0 = 9.2e-4
+    vertical_gravity = T
 /
 
 &usr_list
     usr_geometry = 'rz'
-    cavity_radius = 1d-5   ! in 100au, with d=157pc (Gaia 2016) and angular width ~2''
-    cavity_width = 1d-9          ! 100au, constrained by Rayleigh and Lovelace criteria
+    cavity_radius = 1d-5
+    cavity_width = 1d-9
     rhomin = 1e-13
+    constant_pressure = F
 /
 
 ! -----------------------------------------------------------------
@@ -31,7 +24,7 @@
     domain_nx1 = 512
     block_nx1 = 64
     xprobmin2 = 0.0
-    xprobmax2 = 0.1
+    xprobmax2 = 0.01
     domain_nx2 = 128
     block_nx2 = 64
 /
@@ -43,8 +36,8 @@
     typeboundary_min1 = 'special', 'noinflow', 'special', 'special'
     typeboundary_max1 = 'special', 'noinflow', 'special', 'special'
     ! z dir
-    typeboundary_min2 = 'special', 'special', 'symm',     'special'
-    typeboundary_max2 = 'special', 'special', 'symm',     'special'
+    typeboundary_min2 = 'symm',     'symm',     'asymm',   'symm'
+    typeboundary_max2 = 'special', 'special',   'cont',   'special'
 /
 
 
@@ -67,14 +60,14 @@
     ! in this simulation, 6156.24d0 is 1 orbital period in code units
     ! for a test particle at r=120, where the cavity is located.
 
-    itsave(1, 1) = 0,1,2,3,4,5
-    itsave(1, 2) = 0,1,2,3,4,5
+    itsave(1, 1) = 0,1,2!,3,4,5
+    itsave(1, 2) = 0,1,2!,3,4,5
     dtsave_log = 1d-3
     dtsave_dat = 1d-3
 /
 
 &stoplist
-    time_max = 1d-2
+    time_max = 3d-3
 /
 
 &methodlist
