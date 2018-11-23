@@ -64,7 +64,7 @@ def build_model(conf, model_class):
     return model_class(my_subs)
 
 
-conf = merge_configs([here/'hd142527_rphi.nml', here/'add_dust.par'])
+conf = merge_configs([here/'hd142527_rphi.nml', here/'dust_rphi.par'])
 
 r_range = np.linspace(conf['meshlist']['xprobmin1'], conf['meshlist']['xprobmax1'], num=100)
 
