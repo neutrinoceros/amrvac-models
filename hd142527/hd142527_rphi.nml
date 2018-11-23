@@ -1,10 +1,12 @@
 ! ======================================
+!
 ! trigger RWI at the edge of a cavity
 ! in a transistion disk
 !
 ! physical parameters are adjusted to
 ! HD 142527, but we don't simulate the
 ! eccentric binary here.
+!
 ! ======================================
 
 &disk_list
@@ -66,9 +68,6 @@
 /
 
 &savelist
-    ! in this simulation, 6156.24d0 is 1 orbital period in code units
-    ! for a test particle at r=120, where the cavity is located.
-
     itsave(1, 1) = 0
     itsave(1, 2) = 0
     dtsave_log = 1d-1
@@ -76,7 +75,7 @@
 /
 
 &stoplist
-    time_max = 20
+    time_max = 100
 /
 
 &methodlist
