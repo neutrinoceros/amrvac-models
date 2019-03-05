@@ -36,8 +36,6 @@ contains
 
   !> This routine should set user methods, and activate the physics module
   subroutine usr_init()
-    use mod_global_parameters
-    use mod_usr_methods
     use mod_disk, only: disk_activate
     use mod_disk_parameters, only: central_mass, ref_radius
     use mod_disk_boundaries, only: wave_killing_parabolic
@@ -128,7 +126,6 @@ contains
     ! Overwrite some default parameters.
     use mod_dust, only: dust_n_species, dust_density, dust_size
     use mod_disk_parameters, only: G
-    use mod_global_parameters
     ! .. local ..
     double precision :: norm_density
     integer i
@@ -162,7 +159,6 @@ contains
 
   subroutine initial_conditions(ixI^L, ixO^L, w, x)
     ! Set up initial conditions
-    use mod_global_parameters
     use mod_disk_phys, only: set_keplerian_angular_motion
     use mod_disk_parameters, only: rho_slope, rho0, aspect_ratio, central_mass, G
     use mod_dust, only: dust_n_species, dust_rho, dust_mom, dust_size
@@ -238,7 +234,6 @@ contains
   ! Boundaries
   ! ----------
   subroutine cst_bound(qt,ixG^L,ixB^L,iB,w,x)
-    use mod_global_parameters
     use mod_disk_boundaries, only: constant_boundaries
     !embed a function defined in mod_disk_boundaries.t
     integer, intent(in)             :: ixG^L, ixB^L, iB
@@ -255,7 +250,6 @@ contains
 
   subroutine pert_random_noise(ixI^L, ixO^L, w, x, mflag, scale_amp)
     ! random perturbations meant to trigger the RWI.
-    use mod_global_parameters
     integer, intent(in)             :: mflag
     double precision, intent(in)    :: scale_amp
     integer, intent(in)             :: ixI^L, ixO^L
