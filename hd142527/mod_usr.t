@@ -5,8 +5,8 @@
 
 module mod_usr
 
-  use mod_hd
-  use mod_constants
+      use mod_hd
+      use mod_constants
 
   implicit none
   ! conversion factors
@@ -51,11 +51,12 @@ contains
     case('rphi')
        call set_coordinate_system("polar_2D")
     case('rz')
-       if (pert_noise) &
-            call mpistop("Error: pert_noise=.true. is not compatible with usr_geometry='rz'")
+       if (pert_noise) call mpistop("Error: pert_noise=.true. &
+       &is not compatible with usr_geometry='rz'")
        call set_coordinate_system("cylindrical_2.5D")
     case default
-       call mpistop("Error: usr_geometry is not set. Choose 'rz' or 'rphi'.")
+       call mpistop("Error: usr_geometry is not set. &
+       &Choose 'rz' or 'rphi'.")
     end select
     }
     {^IFTHREED call mpistop("3D case not implemented")}! set "cylindrical_3D" here
@@ -157,125 +158,151 @@ contains
   end subroutine parameters
 
 
-  subroutine initial_conditions(ixI^L, ixO^L, w, x)
-    ! Set up initial conditions
-    use mod_disk_phys, only: set_keplerian_angular_motion
-    use mod_disk_parameters, only: rho_slope, rho0, aspect_ratio, central_mass, G
-    use mod_dust, only: dust_n_species, dust_rho, dust_mom, dust_size
-    integer, intent(in)             :: ixI^L, ixO^L
-    double precision, intent(in)    :: x(ixI^S,1:ndim)
-    double precision, intent(inout) :: w(ixI^S,1:nw)
+      subroutine initial_conditions(ixI^L, ixO^L, w, x)
+!     Set up initial conditions
+      use mod_disk_phys, only: set_keplerian_angular_motion
+      use mod_disk_parameters, only: rho_slope, rho0, aspect_ratio, &
+      & central_mass, G
+      use mod_dust, only: dust_n_species, dust_rho, dust_mom, dust_size
+      integer, intent(in)             :: ixI^L, ixO^L
+      double precision, intent(in)    :: x(ixI^S,1:ndim)
+      double precision, intent(inout) :: w(ixI^S,1:nw)
 
-    double precision :: tanh_term(ixI^S), gradp_r(ixI^S)
-    double precision :: dust2gas_frac0, partial_dust2gas_fracs(dust_n_species)
-    integer n
+      double precision :: tanh_term(ixI^S), gradp_r(ixI^S)
+      double precision :: dust2gas_frac0, sumfrac
+      double precision :: partial_dust2gas_fracs(dust_n_species)
+      integer n
 
-    if (hd_energy) &
-       call mpistop("Can not use energy equation (case not implemented).")
+      if (hd_energy) &
+      call mpistop("Can not use energy equation (not implemented).")
 
-    ! proper init ---------------------------
-    w(ixO^S, 1:nw) = 0.0d0
+      ! proper init ---------------------------
+      w(ixO^S, 1:nw) = 0.0d0
+      w(ixO^S, rho_) = rho0 * x(ixO^S, r_)**rho_slope * 0.5d0 * &
+      (1d0 + tanh((x(ixO^S, r_) - cavity_radius) / &
+      cavity_width))
 
-    w(ixO^S, rho_) = rho0 * x(ixO^S, r_)**rho_slope * 0.5d0 * (1d0 + tanh((x(ixO^S, r_) - cavity_radius) / cavity_width))
-    if (z_ > 0) & !vertical hydrostatic equilibrium
-         w(ixO^S, rho_) =  w(ixO^S, rho_) * exp(-x(ixO^S, z_)**2 / (2d0*aspect_ratio * x(ixO^S, r_))**2)
+      if (z_ > 0) then             !vertical hydrostatic equilibrium
+         w(ixO^S, rho_) =  w(ixO^S, rho_) * exp(-x(ixO^S, z_)**2 / &
+         (2d0*aspect_ratio * x(ixO^S, r_))**2)
+      end if
 
-    w(ixO^S, rho_) = max(w(ixO^S, rho_), rhomin) ! clip to floor value
+      w(ixO^S, rho_) = max(w(ixO^S, rho_), rhomin) ! clip to floor value
 
-    ! Set rotational equilibrium
-    tanh_term(ixO^S) = tanh(((x(ixO^S, r_) - cavity_radius) / cavity_width))
-    ! compute the radial component of grad(P) (from grad(rho))
-    gradp_r(ixO^S) = rho0 * 0.5d0 *(rho_slope * x(ixO^S, r_)**(rho_slope-1.0d0) * (1.0d0 + tanh_term(ixO^S)) &
-                                 + x(ixO^S, r_)**(rho_slope) * (1.0d0 - tanh_term(ixO^S)**2) / cavity_width)
+!     Set rotational equilibrium
+      tanh_term(ixO^S) = tanh(((x(ixO^S, r_) - cavity_radius) / &
+      cavity_width))
+!     compute the radial component of grad(P) (from grad(rho))
+      gradp_r(ixO^S) = 0.5d0*rho0*(rho_slope* &
+      x(ixO^S, r_)**(rho_slope-1.0d0) * (1.0d0 + tanh_term(ixO^S)) &
+      + x(ixO^S, r_)**(rho_slope) * (1.0d0 - tanh_term(ixO^S)**2) &
+      / cavity_width)
 
-    if (z_ > 0) &
-         gradp_r(ixO^S) = gradp_r(ixO^S) * exp(-x(ixO^S, z_)**2 / (2d0*aspect_ratio * x(ixO^S, r_))**2)
+      if (z_ > 0) then
+         gradp_r(ixO^S) = gradp_r(ixO^S) * exp(-x(ixO^S, z_)**2 / &
+         (2d0*aspect_ratio * x(ixO^S, r_))**2)
+      end if
 
-    gradp_r(ixO^S) = hd_adiab * hd_gamma * w(ixO^S, rho_)**(hd_gamma-1.0d0) * gradp_r(ixO^S)
-    if (constant_pressure) gradp_r(ixO^S) = 0.0d0 !dbg
+      gradp_r(ixO^S) = hd_adiab * hd_gamma * &
+      w(ixO^S, rho_)**(hd_gamma-1.0d0) * gradp_r(ixO^S)
 
-    if (z_ > 0) then
-       w(ixO^S, mom(phi_)) = w(ixO^S, rho_) * dsqrt( &
-            + G*central_mass * x(ixO^S, r_)**2 / (x(ixO^S, r_)**2 + x(ixO^S, z_)**2)**1.5d0 &
-            + x(ixO^S, r_) / w(ixO^S, rho_) * gradp_r(ixO^S))
-    else
-       w(ixO^S, mom(phi_)) = w(ixO^S, rho_) * dsqrt( &
-            + G*central_mass / x(ixO^S, r_) &
-            + x(ixO^S, r_) / w(ixO^S, rho_) * gradp_r(ixO^S))
+      if (constant_pressure) gradp_r(ixO^S) = 0.0d0 !dbg
+
+      if (z_ > 0) then
+         w(ixO^S, mom(phi_)) = w(ixO^S, rho_) * dsqrt( &
+         + G*central_mass * x(ixO^S, r_)**2 &
+         / (x(ixO^S, r_)**2 + x(ixO^S, z_)**2)**1.5d0 &
+         + x(ixO^S, r_) / w(ixO^S, rho_) * gradp_r(ixO^S))
+      else
+         w(ixO^S, mom(phi_)) = w(ixO^S, rho_) * dsqrt( &
+         + G*central_mass / x(ixO^S, r_) &
+         + x(ixO^S, r_) / w(ixO^S, rho_) * gradp_r(ixO^S))
     end if
 
-    ! dust ----------------------------------
-    ! we compute partial dust to gas fractions assuming the total
-    ! fraction = 1/gas2dust_ratio and a size distribution of
-    ! n(s) \proto s**-3.5 (standard collisional equilibriuum
-    ! assumption from debris disks)
+! dust ----------------------------------
+!     we compute partial dust to gas fractions assuming the total
+!     fraction = 1/gas2dust_ratio and a size distribution of
+!     n(s) \proto s**-3.5 (standard collisional equilibriuum
+!     assumption from debris disks)
 
-    if (hd_dust) then
-       dust2gas_frac0 = one / gas2dust_ratio / sum((dust_size(:)/dust_size(1))**(-0.5))
-       partial_dust2gas_fracs = dust2gas_frac0 * (dust_size(:)/dust_size(1))**(-0.5)
-       if (sum(partial_dust2gas_fracs(:)) - one / gas2dust_ratio > 1e-14) then
-          call mpistop("error in dust init: total dust2gas fraction does not match user parameter")
-       end if
+      if (hd_dust) then
+         dust2gas_frac0 = 1.0d0 / gas2dust_ratio / sum((dust_size(:) / &
+         dust_size(1))**(-0.5d0))
 
-       do n=1, dust_n_species
-          w(ixO^S, dust_rho(n)) = w(ixO^S, rho_) * partial_dust2gas_fracs(n)
-          w(ixO^S, dust_mom(1,n)) = 0d0
-          call set_keplerian_angular_motion(ixI^L, ixO^L, w, x, dust_rho(n), dust_mom(phi_, n))
-       end do
-    end if
+         partial_dust2gas_fracs = dust2gas_frac0 * &
+         (dust_size(:)/dust_size(1))**(-0.5d0)
 
-    ! add perturbations ---------------------
-    if (it == 0 .and. pert_noise) then
-       call pert_random_noise(ixI^L, ixO^L, w, x, pert_moment, pert_amp)
-    end if
-  end subroutine initial_conditions
+         sumfrac = sum(partial_dust2gas_fracs(:))
+         if (sumfrac - 1.0d0 / gas2dust_ratio > 1e-14) then
+            call mpistop("error in dust init: total dust2gas &
+            &fraction does not match user parameter")
+         end if
+
+         do n=1, dust_n_species
+            w(ixO^S, dust_rho(n)) = w(ixO^S, rho_) &
+            * partial_dust2gas_fracs(n)
+            w(ixO^S, dust_mom(1,n)) = 0d0
+            call set_keplerian_angular_motion(ixI^L, ixO^L, w, x, &
+            dust_rho(n), dust_mom(phi_, n))
+         end do
+      end if
+
+!     add perturbations ---------------------
+      if (it == 0 .and. pert_noise) then
+         call pert_random_noise(ixI^L, ixO^L, w, x, pert_moment, pert_amp)
+      end if
+      end subroutine initial_conditions
 
 
-  ! Boundaries
-  ! ----------
-  subroutine cst_bound(qt,ixG^L,ixB^L,iB,w,x)
-    use mod_disk_boundaries, only: constant_boundaries
-    !embed a function defined in mod_disk_boundaries.t
-    integer, intent(in)             :: ixG^L, ixB^L, iB
-    double precision, intent(in)    :: qt, x(ixG^S,1:ndim)
-    double precision, intent(inout) :: w(ixG^S,1:nw)
-    call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,rho_)
-    call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,mom(phi_))
-    !if (z_ > 0) &
-    !     call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,mom(z_))
-  end subroutine cst_bound
+!     Boundaries
+!     ----------
+      subroutine cst_bound(qt,ixG^L,ixB^L,iB,w,x)
+      use mod_disk_boundaries, only: constant_boundaries
+!     embed a function defined in mod_disk_boundaries.t
+      integer, intent(in)             :: ixG^L, ixB^L, iB
+      double precision, intent(in)    :: qt, x(ixG^S,1:ndim)
+      double precision, intent(inout) :: w(ixG^S,1:nw)
+      call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,rho_)
+      call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,mom(phi_))
+!     if (z_ > 0) &
+!     call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,mom(z_))
+      end subroutine cst_bound
 
-  ! Optional perturbations to the initial state
-  ! ------------------------------------------
+!     Optional perturbations to the initial state
+!     ------------------------------------------
 
-  subroutine pert_random_noise(ixI^L, ixO^L, w, x, mflag, scale_amp)
-    ! random perturbations meant to trigger the RWI.
-    integer, intent(in)             :: mflag
-    double precision, intent(in)    :: scale_amp
-    integer, intent(in)             :: ixI^L, ixO^L
-    double precision, intent(in)    :: x(ixI^S,1:ndim)
-    double precision, intent(inout) :: w(ixI^S,1:nw)
-    ! .. local ..
-    double precision, dimension(ixI^S) :: amps, norms
-    integer :: seed_size, block_index, i
-    integer, allocatable :: seed(:)
+      subroutine pert_random_noise(ixI^L, ixO^L, w, x, mflag, scale_amp)
+!     random perturbations meant to trigger the RWI.
+      integer, intent(in)             :: mflag
+      double precision, intent(in)    :: scale_amp
+      integer, intent(in)             :: ixI^L, ixO^L
+      double precision, intent(in)    :: x(ixI^S,1:ndim)
+      double precision, intent(inout) :: w(ixI^S,1:nw)
+!     .. local ..
+      double precision, dimension(ixI^S) :: amps, norms
+      integer :: seed_size, block_index, i
+      integer, allocatable :: seed(:)
 
-    ! seeding. We use 'mype' (the proc index) to avoid repetitions accross processes,
-    ! and a calculated (azimuthal) 'block_index' of sorts to further avoid repetitions accross blocks.
-    {^IFTWOD
-    block_index = int(x(ixomin1, ixomin2, phi_)/(xprobmax2-xprobmin2) * domain_nx2/block_nx2)
-    }!this condition block allows to use variables specific to 2D without breaking compilation in 1D
-    call random_seed(size=seed_size)
-    allocate(seed(seed_size), source=(mype*37+(401*block_index))*[(i, i=0, seed_size-1)])
-    call random_seed(put=seed)
-    deallocate(seed)
+!     seeding. We use 'mype' (the proc index) to avoid repetitions accross processes,
+!     and a calculated (azimuthal) 'block_index' of sorts to further avoid repetitions accross blocks.
+      {^IFTWOD
+      block_index = int(x(ixomin1, ixomin2, phi_)/(xprobmax2-xprobmin2)&
+      * domain_nx2/block_nx2)
+      }
+!     this condition block allows to use variables specific to 2D without breaking compilation in 1D
+      call random_seed(size=seed_size)
+      allocate(seed(seed_size), source=(mype*37+(401*block_index))*[(i, i=0, seed_size-1)])
+      call random_seed(put=seed)
+      deallocate(seed)
 
-    call random_number(amps(ixO^S))
+      call random_number(amps(ixO^S))
 
-    norms(ixO^S) = sqrt(w(ixO^S, mom(r_))**2 + w(ixO^S, mom(phi_))**2)
-    amps(ixO^S) = norms(ixO^S) * (2d0*amps(ixO^S)-1d0) * scale_amp
+      norms(ixO^S) = sqrt(w(ixO^S, mom(r_))**2 + w(ixO^S, mom(phi_))**2)
+      amps(ixO^S) = norms(ixO^S) * (2d0*amps(ixO^S)-1d0) * scale_amp
 
-    w(ixO^S, mom(mflag)) = w(ixO^S, mom(mflag)) &
-         + amps(ixO^S) * exp(-(x(ixO^S, r_) - cavity_radius)**2 / (10*cavity_width**2))
-  end subroutine pert_random_noise
+      w(ixO^S, mom(mflag)) = w(ixO^S, mom(mflag)) &
+      + amps(ixO^S) * exp(-(x(ixO^S, r_) - cavity_radius)**2 / &
+      (10*cavity_width**2))
+      end subroutine pert_random_noise
+
 end module mod_usr
