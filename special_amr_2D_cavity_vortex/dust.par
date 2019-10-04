@@ -1,0 +1,40 @@
+!===========================
+! add dust (2D rphi)
+!===========================
+
+
+&hd_list
+  hd_dust = .true.
+/
+
+&dust_list
+  dust_n_species = 4
+  gas_mu = 2d0
+  dust_temperature = 0d0
+  dust_min_rho = 1d-15
+  dust_method = 'Kwok'
+  dust_small_to_zero = .true. ! mask with 0 when bellow dust_min_rho threshold
+  dust_backreaction = .false.
+/
+
+&usr_dust_list
+  gas2dust_ratio = 1d2
+  grain_density_gcm3 = 1d0
+  grain_size_cm = 1d0, 1d-1, 1d-2, 1d-3
+/
+
+&boundlist
+  nghostcells = 2
+
+  !> radial boundaries
+  typeboundary_min1 = 'special','cont','special', 12*'cont'
+  typeboundary_max1 = 'special','noinflow','special', 12*'cont'
+
+  !> azimuthal boundaries
+  typeboundary_min2 = 15*'periodic'
+  typeboundary_max2 = 15*'periodic'
+/
+
+&methodlist
+    flux_scheme = 20*'hll' ! because hllc with dust_method 'Kwok' and 'none' is broken
+/
