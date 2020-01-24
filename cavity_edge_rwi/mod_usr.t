@@ -34,51 +34,52 @@ module mod_usr
 
 contains
 
-  !> This routine should set user methods, and activate the physics module
-  subroutine usr_init()
-    use mod_disk, only: disk_activate
-    use mod_disk_parameters, only: central_mass, ref_radius
-    use mod_disk_boundaries, only: wave_killing_parabolic
+   !> This routine should set user methods, and activate the physics module
+   subroutine usr_init()
+      use mod_disk, only: disk_activate
+      use mod_disk_parameters, only: central_mass, ref_radius, aspect_ratio, temperature_exponent
+      use mod_disk_boundaries, only: wave_killing_parabolic
+      use mod_disk_phys, only: locally_isothermal_pthermal
 
-    call read_usr_parameters(par_files)
-    ! Choose coordinate system according to user input at setup
-    {^IFONED call set_coordinate_system("polar_1.5D")
-    if (pert_noise) &
-         call mpistop("Error: pert_noise=.true. is meant for ndim >= 2")
-    }
-    {^IFTWOD
-    select case(trim(usr_geometry))
-    case('rphi')
-       call set_coordinate_system("polar_2D")
-    case('rz')
-       if (pert_noise) call mpistop("Error: pert_noise=.true. &
-       &is not compatible with usr_geometry='rz'")
-       call set_coordinate_system("cylindrical_2.5D")
-    case default
-       call mpistop("Error: usr_geometry is not set. &
-       &Choose 'rz' or 'rphi'.")
-    end select
-    }
-    {^IFTHREED call mpistop("3D case not implemented")}! set "cylindrical_3D" here
+      call read_usr_parameters(par_files)
+      ! Choose coordinate system according to user input at setup
+      {^IFONED call set_coordinate_system("polar_1.5D")
+      if (pert_noise) &
+            call mpistop("Error: pert_noise=.true. is meant for ndim >= 2")
+      }
+      {^IFTWOD
+      select case(trim(usr_geometry))
+      case('rphi')
+         call set_coordinate_system("polar_2D")
+      case('rz')
+         if (pert_noise) call mpistop("Error: pert_noise=.true. &
+         &is not compatible with usr_geometry='rz'")
+         call set_coordinate_system("cylindrical_2.5D")
+      case default
+         call mpistop("Error: usr_geometry is not set. &
+         &Choose 'rz' or 'rphi'.")
+      end select
+      }
+      {^IFTHREED call mpistop("3D case not implemented")}! set "cylindrical_3D" here
 
-    ! A routine for initial conditions is always required
-    usr_init_one_grid    => initial_conditions
-    usr_set_parameters   => parameters
-    usr_special_bc       => cst_bound
-    usr_process_adv_grid => wave_killing_parabolic
+      ! A routine for initial conditions is always required
+      usr_init_one_grid    => initial_conditions
+      usr_set_parameters   => parameters
+      usr_special_bc       => cst_bound
+      usr_process_adv_grid => wave_killing_parabolic
 
-    ! Choose independent normalization units if using dimensionless variables.
-    unit_mass    = msun2g ! NOT A STANDARD AMRVAC VARIABLE
-    unit_length  = base_length_au * au2cm ! 100au (cm)
-    unit_density = unit_mass / unit_length**2
+      ! Choose independent normalization units if using dimensionless variables.
+      unit_mass    = msun2g ! NOT A STANDARD AMRVAC VARIABLE
+      unit_length  = base_length_au * au2cm ! 100au (cm)
+      unit_density = unit_mass / unit_length**2
 
-    ! orbital period at ref_radius (s)
-    unit_time = yr2s * central_mass**(-0.5) * (base_length_au*ref_radius)**3/2
+      ! orbital period at ref_radius (s)
+      unit_time = yr2s * central_mass**(-0.5) * (base_length_au*ref_radius)**3/2
 
-    call hd_activate()
-    call read_usr_dust_parameters(par_files)
-    call disk_activate(hd_gravity)
-  end subroutine usr_init
+      call hd_activate()
+      call read_usr_dust_parameters(par_files)
+      call disk_activate(hd_gravity)
+   end subroutine usr_init
 
 
   subroutine read_usr_parameters(files)
