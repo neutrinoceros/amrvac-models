@@ -1,4 +1,0 @@
-&boundlist
-typeboundary_min1 = 3*'cont'
-typeboundary_max1 = 3*'noinflow'
-/

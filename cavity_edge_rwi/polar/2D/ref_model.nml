@@ -9,13 +9,7 @@
 !
 ! ======================================
 
-&disk_list
-    ref_radius = 1.57
-    central_mass = 2.2
-    rho_slope = -1.0
-    rho0 = 9.2e-4
-    wk_amp = 50d0
-/
+! lists specific to this mod_usr.t
 
 &usr_list
     usr_geometry = 'rphi'
@@ -30,7 +24,18 @@
     pert_amp = 1d-2
 /
 
-! -----------------------------------------------------------------
+! disk module is considered "semi standard" (not part of the main repo but shared with Heloise)
+&disk_list
+    ref_radius = 1.57
+    central_mass = 2.2
+    rho_slope = -1.0
+    rho0 = 9.2e-4
+    wk_amp = 50d0
+/
+
+
+
+! standard amrvac lists -----------------------------------------------------------------
 
 &meshlist
     refine_max_level = 1
@@ -53,10 +58,7 @@
 /
 
 &filelist
-    base_filename = 'hd142527_rphi'
-    convert_type = 'vtuBCCmpi'
-    autoconvert = .true.
-    nocartesian = .true.
+    base_filename = 'output_rphi'
 /
 
 &hd_list
@@ -81,7 +83,7 @@
 &methodlist
     small_density = 1e-15
     time_integrator = 'twostep'
-    flux_scheme = 20*'hll'
+    flux_scheme = 20*'hll' ! hllc is "better" but doesn't work with dust
     limiter = 20*'koren'
     gradient_limiter = 20*'koren'
 /

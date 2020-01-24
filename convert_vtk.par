@@ -1,0 +1,7 @@
+! I'm keeping this modifier parfile as legacy but don't intend to use vtk anymore
+
+&filelist
+    convert_type = 'vtuBCCmpi'
+    autoconvert = .true.
+    nocartesian = .true.
+/
