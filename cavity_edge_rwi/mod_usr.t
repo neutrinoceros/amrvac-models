@@ -37,7 +37,7 @@ contains
    !> This routine should set user methods, and activate the physics module
    subroutine usr_init()
       use mod_disk, only: disk_activate
-      use mod_disk_parameters, only: central_mass, ref_radius, aspect_ratio, temperature_exponent
+      use mod_disk_parameters, only: central_mass, ref_radius, rho0, aspect_ratio, temperature_exponent
       use mod_disk_boundaries, only: wave_killing_parabolic
 
       call read_usr_parameters(par_files)
@@ -156,14 +156,15 @@ contains
 
    subroutine initial_conditions(ixI^L, ixO^L, w, x)
       use mod_disk_phys, only: set_keplerian_angular_motion
-      use mod_disk_parameters, only: rho_slope, rho0, aspect_ratio, &
-      & central_mass, G
+      use mod_disk_parameters, only: rho_slope, rho0, aspect_ratio, temperature_exponent, central_mass, G, lisoth_eos
+      use mod_disk_phys, only: get_pthermal_lisoth
+
       use mod_dust, only: dust_n_species, dust_rho, dust_mom, dust_size
       integer, intent(in)             :: ixI^L, ixO^L
       double precision, intent(in)    :: x(ixI^S,1:ndim)
       double precision, intent(inout) :: w(ixI^S,1:nw)
 
-      double precision :: tanh_term(ixI^S), gradp_r(ixI^S)
+      double precision :: tanh_term(ixI^S), gradp_r(ixI^S), pth(ixI^S), pressure_term(ixI^S)
       double precision :: dust2gas_frac0, sumfrac
       double precision :: partial_dust2gas_fracs(dust_n_species)
       integer n
@@ -173,9 +174,8 @@ contains
 
       ! proper init ---------------------------
       w(ixO^S, 1:nw) = 0.0d0
-      w(ixO^S, rho_) = rho0 * x(ixO^S, r_)**rho_slope * 0.5d0 * &
-      (1d0 + tanh((x(ixO^S, r_) - cavity_radius) / &
-      cavity_width))
+      ! nb: I init rho on the whole input (ixI) array to support later computation of gradients over ixO
+      w(ixI^S, rho_) = rho0 * x(ixI^S, r_)**rho_slope * 0.5d0 * (1d0 + tanh((x(ixI^S, r_) - cavity_radius) / cavity_width))
 
       if (z_ > 0) then             !vertical hydrostatic equilibrium
          w(ixO^S, rho_) =  w(ixO^S, rho_) * exp(-x(ixO^S, z_)**2 / &
@@ -198,21 +198,28 @@ contains
          (2d0*aspect_ratio * x(ixO^S, r_))**2)
       end if
 
-      gradp_r(ixO^S) = hd_adiab * hd_gamma * &
-      w(ixO^S, rho_)**(hd_gamma-1.0d0) * gradp_r(ixO^S)
+      gradp_r(ixO^S) = hd_adiab * hd_gamma * w(ixO^S, rho_)**(hd_gamma-1.0d0) * gradp_r(ixO^S)
 
       if (constant_pressure) gradp_r(ixO^S) = 0.0d0 !dbg
 
+      ! azimuthal velocity --------------------
       if (z_ > 0) then
          w(ixO^S, mom(phi_)) = w(ixO^S, rho_) * dsqrt( &
          + G*central_mass * x(ixO^S, r_)**2 &
          / (x(ixO^S, r_)**2 + x(ixO^S, z_)**2)**1.5d0 &
          + x(ixO^S, r_) / w(ixO^S, rho_) * gradp_r(ixO^S))
       else
-         w(ixO^S, mom(phi_)) = w(ixO^S, rho_) * dsqrt( &
-         + G*central_mass / x(ixO^S, r_) &
-         + x(ixO^S, r_) / w(ixO^S, rho_) * gradp_r(ixO^S))
-    end if
+         if (lisoth_eos) then
+            pressure_term(ixO^S) = 0d0
+            pth(ixO^S) = 0d0
+            call usr_set_pthermal(w, x, ixI^L, ixI^L, pth)
+            call gradient(pth, ixI^L, ixO^L, r_, pressure_term)
+            pressure_term(ixO^S) = x(ixO^S, r_) * pressure_term(ixO^S) / w(ixO^S, rho_)
+         else
+            pressure_term(ixO^S) = x(ixO^S, r_) / w(ixO^S, rho_) * gradp_r(ixO^S)
+         end if
+         w(ixO^S, mom(phi_)) = w(ixO^S, rho_) * dsqrt(G*central_mass / x(ixO^S,r_) + pressure_term(ixO^S))
+      end if
 
 ! dust ----------------------------------
 !     we compute partial dust to gas fractions assuming the total
