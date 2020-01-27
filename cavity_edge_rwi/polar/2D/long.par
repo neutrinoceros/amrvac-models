@@ -6,7 +6,7 @@
 /
 
 &disk_list
-    reference_radius = 1.0 ! to help compare with elena
+    ref_radius = 1.0 ! to help compare with elena
 /
 
 &stoplist
