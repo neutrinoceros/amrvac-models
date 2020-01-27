@@ -1,0 +1,14 @@
+&savelist
+    itsave(1, 1) = 0
+    itsave(1, 2) = 0
+    dtsave_log = 0.5d0
+    dtsave_dat = 1e2
+/
+
+&disk_list
+    reference_radius = 1.0 ! to help compare with elena
+/
+
+&stoplist
+    time_max = 1e4
+/
