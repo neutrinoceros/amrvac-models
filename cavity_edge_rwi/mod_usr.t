@@ -81,85 +81,80 @@ contains
    end subroutine usr_init
 
 
-  subroutine read_usr_parameters(files)
-    !> Read parameters from .par files
-    use mod_dust, only: dust_n_species
-    use mod_global_parameters, only: unitpar
-    character(len=*), intent(in) :: files(:)
-    integer n
+   subroutine read_usr_parameters(files)
+      !> Read parameters from .par files
+      use mod_dust, only: dust_n_species
+      use mod_global_parameters, only: unitpar
+      character(len=*), intent(in) :: files(:)
+      integer n
 
-    namelist /usr_list/ usr_geometry, rhomin,&
-         cavity_radius, cavity_width,&
-         constant_pressure
+      namelist /usr_list/ usr_geometry, rhomin, cavity_radius, cavity_width, constant_pressure
 
-    namelist /perturbation_list/ pert_noise,&
-         pert_moment, pert_amp
+      namelist /perturbation_list/ pert_noise, pert_moment, pert_amp
 
-    do n = 1, size(files)
-       open(unitpar, file=trim(files(n)), status="old")
-       read(unitpar, usr_list, end=111)
-111    rewind(unitpar)
-       read(unitpar, perturbation_list, end=112)
-112    close(unitpar)
-    end do
-  end subroutine read_usr_parameters
+      do n = 1, size(files)
+         open(unitpar, file=trim(files(n)), status="old")
+         read(unitpar, usr_list, end=111)
+111      rewind(unitpar)
+         read(unitpar, perturbation_list, end=112)
+112      close(unitpar)
+      end do
+   end subroutine read_usr_parameters
 
-  subroutine read_usr_dust_parameters(files)
-    !> Read parameters from .par files
-    use mod_dust, only: dust_n_species
-    use mod_global_parameters, only: unitpar
-    character(len=*), intent(in) :: files(:)
-    integer n
+   subroutine read_usr_dust_parameters(files)
+      !> Read parameters from .par files
+      use mod_dust, only: dust_n_species
+      use mod_global_parameters, only: unitpar
+      character(len=*), intent(in) :: files(:)
+      integer n
 
-    namelist /usr_dust_list/ gas2dust_ratio,&
-         grain_density_gcm3, grain_size_cm
+      namelist /usr_dust_list/ gas2dust_ratio, grain_density_gcm3, grain_size_cm
 
-    allocate(grain_size_cm(dust_n_species))
-    do n = 1, size(files)
-       open(unitpar, file=trim(files(n)), status="old")
-       read(unitpar, usr_dust_list, end=111)
-111    close(unitpar)
-    end do
-  end subroutine read_usr_dust_parameters
+      allocate(grain_size_cm(dust_n_species))
+      do n = 1, size(files)
+         open(unitpar, file=trim(files(n)), status="old")
+         read(unitpar, usr_dust_list, end=111)
+111      close(unitpar)
+      end do
+   end subroutine read_usr_dust_parameters
 
 
-  subroutine parameters()
-    ! Overwrite some default parameters.
-    use mod_dust, only: dust_n_species, dust_density, dust_size
-    use mod_disk_parameters, only: G
-    ! .. local ..
-    double precision :: norm_density
-    integer i
+   subroutine parameters()
+      ! Overwrite some default parameters.
+      use mod_dust, only: dust_n_species, dust_density, dust_size
+      use mod_disk_parameters, only: G
+      ! .. local ..
+      double precision :: norm_density
+      integer i
 
-    ! dust ----------------------------------
-    norm_density = unit_mass / unit_length**3
-    if (hd_dust) then
-       do i = 1, dust_n_species
-          !(au2cm)**-1 is 1cm in code units
-          dust_size(i) = grain_size_cm(i) / unit_length
+      ! dust ----------------------------------
+      norm_density = unit_mass / unit_length**3
+      if (hd_dust) then
+         do i = 1, dust_n_species
+            !(au2cm)**-1 is 1cm in code units
+            dust_size(i) = grain_size_cm(i) / unit_length
 
-          !1g/cm^3 in code unit
-          dust_density(i) = grain_density_gcm3 / norm_density
-       end do
-    end if
+            !1g/cm^3 in code unit
+            dust_density(i) = grain_density_gcm3 / norm_density
+         end do
+      end if
 
-    if (mype==0) then
-       print*,'User messages ======================================='
-       print*, 'G/4pi^2 = ', G/(4*dpi**2)
-       print*, 'hd_adiab = ', hd_adiab
-       print*, 'usr_geometry = ', usr_geometry
+      if (mype==0) then
+         print*,'User messages ======================================='
+         print*, 'G/4pi^2 = ', G/(4*dpi**2)
+         print*, 'hd_adiab = ', hd_adiab
+         print*, 'usr_geometry = ', usr_geometry
 
-       if (hd_dust) then
-          print*, 'using ', dust_n_species, 'dust bins'
-          write(*,'(a,f17.3,a)') ' gas to dust ratio = ', gas2dust_ratio
-       end if
-       print*,'====================================================='
-    end if
-  end subroutine parameters
+         if (hd_dust) then
+            print*, 'using ', dust_n_species, 'dust bins'
+            write(*,'(a,f17.3,a)') ' gas to dust ratio = ', gas2dust_ratio
+         end if
+         print*,'====================================================='
+      end if
+   end subroutine parameters
 
 
-      subroutine initial_conditions(ixI^L, ixO^L, w, x)
-!     Set up initial conditions
+   subroutine initial_conditions(ixI^L, ixO^L, w, x)
       use mod_disk_phys, only: set_keplerian_angular_motion
       use mod_disk_parameters, only: rho_slope, rho0, aspect_ratio, &
       & central_mass, G
@@ -238,11 +233,9 @@ contains
          end if
 
          do n=1, dust_n_species
-            w(ixO^S, dust_rho(n)) = w(ixO^S, rho_) &
-            * partial_dust2gas_fracs(n)
+            w(ixO^S, dust_rho(n)) = w(ixO^S, rho_) * partial_dust2gas_fracs(n)
             w(ixO^S, dust_mom(1,n)) = 0d0
-            call set_keplerian_angular_motion(ixI^L, ixO^L, w, x, &
-            dust_rho(n), dust_mom(phi_, n))
+            call set_keplerian_angular_motion(ixI^L, ixO^L, w, x, dust_rho(n), dust_mom(phi_, n))
          end do
       end if
 
@@ -250,12 +243,12 @@ contains
       if (it == 0 .and. pert_noise) then
          call pert_random_noise(ixI^L, ixO^L, w, x, pert_moment, pert_amp)
       end if
-      end subroutine initial_conditions
+   end subroutine initial_conditions
 
 
 !     Boundaries
 !     ----------
-      subroutine cst_bound(qt,ixG^L,ixB^L,iB,w,x)
+   subroutine cst_bound(qt,ixG^L,ixB^L,iB,w,x)
       use mod_disk_boundaries, only: constant_boundaries
 !     embed a function defined in mod_disk_boundaries.t
       integer, intent(in)             :: ixG^L, ixB^L, iB
@@ -265,12 +258,12 @@ contains
       call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,mom(phi_))
 !     if (z_ > 0) &
 !     call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,mom(z_))
-      end subroutine cst_bound
+   end subroutine cst_bound
 
 !     Optional perturbations to the initial state
 !     ------------------------------------------
 
-      subroutine pert_random_noise(ixI^L, ixO^L, w, x, mflag, scale_amp)
+   subroutine pert_random_noise(ixI^L, ixO^L, w, x, mflag, scale_amp)
 !     random perturbations meant to trigger the RWI.
       integer, intent(in)             :: mflag
       double precision, intent(in)    :: scale_amp
@@ -299,9 +292,7 @@ contains
       norms(ixO^S) = sqrt(w(ixO^S, mom(r_))**2 + w(ixO^S, mom(phi_))**2)
       amps(ixO^S) = norms(ixO^S) * (2d0*amps(ixO^S)-1d0) * scale_amp
 
-      w(ixO^S, mom(mflag)) = w(ixO^S, mom(mflag)) &
-      + amps(ixO^S) * exp(-(x(ixO^S, r_) - cavity_radius)**2 / &
-      (10*cavity_width**2))
-      end subroutine pert_random_noise
+      w(ixO^S, mom(mflag)) = w(ixO^S, mom(mflag)) + amps(ixO^S) * exp(-(x(ixO^S, r_) - cavity_radius)**2 / (10*cavity_width**2))
+   end subroutine pert_random_noise
 
 end module mod_usr
