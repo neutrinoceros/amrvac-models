@@ -174,9 +174,8 @@ contains
 
       ! proper init ---------------------------
       w(ixO^S, 1:nw) = 0.0d0
-      w(ixO^S, rho_) = rho0 * x(ixO^S, r_)**rho_slope * 0.5d0 * &
-      (1d0 + tanh((x(ixO^S, r_) - cavity_radius) / &
-      cavity_width))
+      ! nb: I init rho on the whole input (ixI) array to support later computation of gradients over ixO
+      w(ixI^S, rho_) = rho0 * x(ixI^S, r_)**rho_slope * 0.5d0 * (1d0 + tanh((x(ixI^S, r_) - cavity_radius) / cavity_width))
 
       if (z_ > 0) then             !vertical hydrostatic equilibrium
          w(ixO^S, rho_) =  w(ixO^S, rho_) * exp(-x(ixO^S, z_)**2 / &
@@ -211,7 +210,6 @@ contains
          + x(ixO^S, r_) / w(ixO^S, rho_) * gradp_r(ixO^S))
       else
          if (lisoth_eos) then
-            if (mype == 0) print*, "IN INIT, LOCALLY ISO"
             pressure_term(ixO^S) = 0d0
             pth(ixO^S) = 0d0
             call usr_set_pthermal(w, x, ixI^L, ixI^L, pth)
