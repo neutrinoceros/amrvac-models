@@ -39,7 +39,6 @@ contains
       use mod_disk, only: disk_activate
       use mod_disk_parameters, only: central_mass, ref_radius, aspect_ratio, temperature_exponent
       use mod_disk_boundaries, only: wave_killing_parabolic
-      use mod_disk_phys, only: locally_isothermal_pthermal
 
       call read_usr_parameters(par_files)
       ! Choose coordinate system according to user input at setup
@@ -52,12 +51,12 @@ contains
       case('rphi')
          call set_coordinate_system("polar_2D")
       case('rz')
-         if (pert_noise) call mpistop("Error: pert_noise=.true. &
-         &is not compatible with usr_geometry='rz'")
+         if (pert_noise) then
+            call mpistop("Error: pert_noise=.true. is not compatible with usr_geometry='rz'")
+         end if
          call set_coordinate_system("cylindrical_2.5D")
       case default
-         call mpistop("Error: usr_geometry is not set. &
-         &Choose 'rz' or 'rphi'.")
+         call mpistop("Error: usr_geometry is not set. Choose 'rz' or 'rphi'.")
       end select
       }
       {^IFTHREED call mpistop("3D case not implemented")}! set "cylindrical_3D" here
@@ -146,12 +145,12 @@ contains
 
     if (mype==0) then
        print*,'User messages ======================================='
-       write(*,*), 'G/4pi^2 = ', G/(4*dpi**2)
-       write(*,*), 'hd_adiab = ', hd_adiab
-       write(*,*), 'usr_geometry = ', usr_geometry
+       print*, 'G/4pi^2 = ', G/(4*dpi**2)
+       print*, 'hd_adiab = ', hd_adiab
+       print*, 'usr_geometry = ', usr_geometry
 
        if (hd_dust) then
-          write(*,*), 'using ', dust_n_species, 'dust bins'
+          print*, 'using ', dust_n_species, 'dust bins'
           write(*,'(a,f17.3,a)') ' gas to dust ratio = ', gas2dust_ratio
        end if
        print*,'====================================================='
@@ -235,8 +234,7 @@ contains
 
          sumfrac = sum(partial_dust2gas_fracs(:))
          if (sumfrac - 1.0d0 / gas2dust_ratio > 1e-14) then
-            call mpistop("error in dust init: total dust2gas &
-            &fraction does not match user parameter")
+            call mpistop("error in dust init: total dust2gas fraction does not match user parameter")
          end if
 
          do n=1, dust_n_species
