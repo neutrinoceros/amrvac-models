@@ -1,0 +1,9 @@
+&disk_list
+    lisoth_eos = True
+    aspect_ratio = 0.09
+    temperature_exponent = 0.0
+/
+
+&filelist
+    base_filename = "_lisoth"
+/
