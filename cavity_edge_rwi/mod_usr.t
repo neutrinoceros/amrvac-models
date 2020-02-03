@@ -127,7 +127,7 @@ contains
       hd_gamma = 5d0/3d0
 
       if (mype==0) then
-         print*,'mod_user messages ======================================='
+         print*,'mod_user messages ===================================='
          print*, 'Warning : forcing hd_gamma = 5/3'
          print*, 'G/4pi^2 = ', G/(4*dpi**2)
          print*, 'hd_adiab = ', hd_adiab
@@ -209,35 +209,42 @@ contains
 !     ------------------------------------------
 
    subroutine pert_random_noise(ixI^L, ixO^L, w, x, mflag, scale_amp)
-!     random perturbations meant to trigger the RWI.
+     ! random perturbations meant to trigger the RWI.
       integer, intent(in)             :: mflag
       double precision, intent(in)    :: scale_amp
       integer, intent(in)             :: ixI^L, ixO^L
       double precision, intent(in)    :: x(ixI^S,1:ndim)
       double precision, intent(inout) :: w(ixI^S,1:nw)
-!     .. local ..
-      double precision, dimension(ixI^S) :: amps, norms
+
+      double precision, dimension(ixI^S) :: random_factor, noise
       integer :: seed_size, block_index, i
       integer, allocatable :: seed(:)
 
-!     seeding. We use 'mype' (the proc index) to avoid repetitions accross processes,
-!     and a calculated (azimuthal) 'block_index' of sorts to further avoid repetitions accross blocks.
+      ! rng seeding. We use 'mype' (the proc index) to avoid repetitions accross processes,
+      ! and a calculated (azimuthal) 'block_index' of sorts to further avoid repetitions accross blocks.
       {^IFTWOD
-      block_index = int(x(ixomin1, ixomin2, phi_)/(xprobmax2-xprobmin2)&
-      * domain_nx2/block_nx2)
+      block_index = int(x(ixomin1, ixomin2, phi_)/(xprobmax2-xprobmin2) * domain_nx2/block_nx2)
       }
-!     this condition block allows to use variables specific to 2D without breaking compilation in 1D
+      ! this condition block allows to use variables specific to 2D without breaking compilation in 1D
       call random_seed(size=seed_size)
       allocate(seed(seed_size), source=(mype*37+(401*block_index))*[(i, i=0, seed_size-1)])
       call random_seed(put=seed)
       deallocate(seed)
 
-      call random_number(amps(ixO^S))
 
-      norms(ixO^S) = sqrt(w(ixO^S, mom(r_))**2 + w(ixO^S, mom(phi_))**2)
-      amps(ixO^S) = norms(ixO^S) * (2d0*amps(ixO^S)-1d0) * scale_amp
+      !noise(ixO^S) = dsqrt(w(ixO^S, mom(r_))**2 + w(ixO^S, mom(phi_))**2) ! deprecated
+      call hd_get_csound2(w, x, ixI^L, ixO^L, noise)
+      noise(ixO^S) = dsqrt(noise(ixO^S)) * w(ixO^S, rho_)
 
-      w(ixO^S, mom(mflag)) = w(ixO^S, mom(mflag)) + amps(ixO^S) * exp(-(x(ixO^S, r_) - cavity_radius)**2 / (10*cavity_width**2))
+      ! randomize
+      call random_number(random_factor(ixO^S))
+      noise(ixO^S) = noise(ixO^S) * random_factor(ixO^S)
+
+      ! spatially localize the effect
+      noise(ixO^S) = noise(ixO^S) * exp(-(x(ixO^S, r_) - cavity_radius)**2 / (2*cavity_width**2))
+
+      ! application
+      w(ixO^S, mom(mflag)) = w(ixO^S, mom(mflag)) + noise(ixO^S) 
    end subroutine pert_random_noise
 
 
