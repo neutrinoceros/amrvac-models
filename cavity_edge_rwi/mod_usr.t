@@ -164,7 +164,7 @@ contains
       double precision, intent(in)    :: x(ixI^S,1:ndim)
       double precision, intent(inout) :: w(ixI^S,1:nw)
 
-      double precision :: tanh_term(ixI^S), gradp_r(ixI^S), pth(ixI^S), pressure_term(ixI^S)
+      double precision, dimension(ixI^S) :: gradp_r, pth, pressure_term
       double precision :: dust2gas_frac0, sumfrac
       double precision :: partial_dust2gas_fracs(dust_n_species)
       integer n
