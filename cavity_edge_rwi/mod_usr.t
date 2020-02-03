@@ -164,7 +164,7 @@ contains
       double precision, intent(in)    :: x(ixI^S,1:ndim)
       double precision, intent(inout) :: w(ixI^S,1:nw)
 
-      double precision, dimension(ixI^S) :: gradp_r, pth, pressure_term
+      double precision, dimension(ixI^S) :: gradp_r, pth, pressure_term, tanh_term
       double precision :: dust2gas_frac0, sumfrac
       double precision :: partial_dust2gas_fracs(dust_n_species)
       integer :: idust  = -1
@@ -189,12 +189,14 @@ contains
       ! Set rotational equilibrium
 
       ! analytic pressure gradient (for barotropic case only, deprecated)
-      !tanh_term(ixO^S) = tanh(((x(ixO^S, r_) - cavity_radius) / cavity_width))
-      !gradp_r(ixO^S) = 0.5d0*rho0*(rho_slope* x(ixO^S, r_)**(rho_slope-1.0d0) * (1.0d0 + tanh_term(ixO^S)) + x(ixO^S, r_)**(rho_slope) * (1.0d0 - tanh_term(ixO^S)**2) / cavity_width)
-      !gradp_r(ixO^S) = hd_adiab * hd_gamma * w(ixO^S, rho_)**(hd_gamma-1.0d0) * gradp_r(ixO^S)
-
-      call hd_get_pthermal(w, x, ixI^L, ixI^L, pth)
-      call gradient(pth, ixI^L, ixO^L, r_, gradp_r)
+      if (lisoth_eos) then
+         call hd_get_pthermal(w, x, ixI^L, ixI^L, pth)
+         call gradient(pth, ixI^L, ixO^L, r_, gradp_r)
+      else
+         tanh_term(ixO^S) = tanh(((x(ixO^S, r_) - cavity_radius) / cavity_width))
+         gradp_r(ixO^S) = 0.5d0*rho0*(rho_slope* x(ixO^S, r_)**(rho_slope-1.0d0) * (1.0d0 + tanh_term(ixO^S)) + x(ixO^S, r_)**(rho_slope) * (1.0d0 - tanh_term(ixO^S)**2) / cavity_width)
+         gradp_r(ixO^S) = hd_adiab * hd_gamma * w(ixO^S, rho_)**(hd_gamma-1.0d0) * gradp_r(ixO^S)
+      end if
 
       if (z_ > 0) then
          ! this is analytic too
