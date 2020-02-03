@@ -76,16 +76,15 @@ contains
       character(len=*), intent(in) :: files(:)
       integer n
 
-      namelist /usr_list/ rhomin, cavity_radius, cavity_width, constant_pressure
+      namelist /usr_list/ &
+           rhomin, cavity_radius, cavity_width, constant_pressure, &
+           pert_noise, pert_moment, pert_amp
 
-      namelist /perturbation_list/ pert_noise, pert_moment, pert_amp
 
       do n = 1, size(files)
          open(unitpar, file=trim(files(n)), status="old")
          read(unitpar, usr_list, end=111)
 111      rewind(unitpar)
-         read(unitpar, perturbation_list, end=112)
-112      close(unitpar)
       end do
    end subroutine read_usr_parameters
 
