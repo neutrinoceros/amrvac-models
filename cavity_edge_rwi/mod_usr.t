@@ -5,31 +5,28 @@
 
 module mod_usr
 
-      use mod_hd
-      use mod_constants
+    use mod_hd
+    use mod_constants
 
-  implicit none
-  ! conversion factors
-  double precision :: base_length_au = 1d2
-  double precision :: au2cm  = 1.49597870691d13 ! a.u. to cm         conversion factor
-  double precision :: msun2g = 1.988d33         ! solar mass to gram conversion factor
-  double precision :: yr2s   = 3.1536d7         ! year to seconds
-  double precision :: unit_mass
+    implicit none
+    ! conversion factors
+    double precision :: base_length_au = 1d2
+    double precision :: au2cm  = 1.49597870691d13 ! a.u. to cm         conversion factor
+    double precision :: msun2g = 1.988d33         ! solar mass to gram conversion factor
+    double precision :: yr2s   = 3.1536d7         ! year to seconds
+    double precision :: unit_mass
 
-  ! &usr_list
-  double precision :: rhomin, cavity_radius, cavity_width
-  logical :: constant_pressure = .false. !useful for debuging
+    ! &usr_list
+    ! "pert" prefix stands for "perturbation"
+    double precision :: rhomin, cavity_radius, cavity_width
+    integer :: pert_moment = 1  ! number of the moment w(:, pert_moment) to perturb
+    double precision :: pert_amp = 0d0  ! relative amplitude of perturbations to initial conditions
 
-  ! &perturbation_list
-  logical :: pert_noise = .false.
-  integer :: pert_moment = 1
-  double precision :: pert_amp = one
-
-  ! &usr_dust_list
-  ! custom dust parameters
-  double precision :: grain_density_gcm3 = one  ! (g/cm^3)
-  double precision :: gas2dust_ratio = 1d2
-  double precision, allocatable :: grain_size_cm(:)
+    ! &usr_dust_list
+    ! custom dust parameters
+    double precision :: grain_density_gcm3 = 1d0  ! (g/cm^3)
+    double precision :: gas2dust_ratio = 1d2
+    double precision, allocatable :: grain_size_cm(:)
 
 contains
 
@@ -42,8 +39,8 @@ contains
       call read_usr_parameters(par_files)
       ! Choose coordinate system according to user input at setup
       {^IFONED call set_coordinate_system("polar_1.5D")
-      if (pert_noise) &
-            call mpistop("Error: pert_noise=.true. is meant for ndim >= 2")
+      if (pert_amp .neq. 0d0) &
+            call mpistop("Error: perturbation is meant for ndim >= 2")
       }
       {^IFTWOD
          call set_coordinate_system("polar_2D")
@@ -54,7 +51,6 @@ contains
       usr_init_one_grid    => initial_conditions
       usr_set_parameters   => parameters
       usr_process_adv_grid => wave_killing_parabolic
-      !usr_special_bc => cst_bound (unused, deprecated)
 
       ! Choose independent normalization units if using dimensionless variables.
       unit_mass    = msun2g ! NOT A STANDARD AMRVAC VARIABLE
@@ -77,16 +73,15 @@ contains
       character(len=*), intent(in) :: files(:)
       integer n
 
-      namelist /usr_list/ rhomin, cavity_radius, cavity_width, constant_pressure
+      namelist /usr_list/ &
+           rhomin, cavity_radius, cavity_width, &
+           pert_moment, pert_amp
 
-      namelist /perturbation_list/ pert_noise, pert_moment, pert_amp
 
       do n = 1, size(files)
          open(unitpar, file=trim(files(n)), status="old")
          read(unitpar, usr_list, end=111)
 111      rewind(unitpar)
-         read(unitpar, perturbation_list, end=112)
-112      close(unitpar)
       end do
    end subroutine read_usr_parameters
 
@@ -156,37 +151,32 @@ contains
       double precision, intent(in)    :: x(ixI^S,1:ndim)
       double precision, intent(inout) :: w(ixI^S,1:nw)
 
-      double precision, dimension(ixI^S) :: gradp_r, pth, pressure_term, tanh_term
+      double precision, dimension(ixI^S) :: pth, pressure_term
       double precision :: dust2gas_frac0, sumfrac
       double precision :: partial_dust2gas_fracs(dust_n_species)
-      integer :: idust  = -1
+      integer :: idust = -1
 
-      if (hd_energy) call mpistop("Can not use energy equation (not implemented).")
+      ! init all fields to avoid uninitialized values
+      w(ixI^S, 1:nw) = 0d0
 
-      ! proper init ---------------------------
-      pressure_term(ixI^S) = 0d0
-      pth(ixI^S) = 0d0
-      gradp_r(ixI^S) = 0d0
-
-      w(ixI^S, 1:nw) = 0.0d0
+      ! init density
       w(ixI^S, rho_) = rho0 * x(ixI^S, r_)**rho_slope * 0.5d0 * (1d0 + tanh((x(ixI^S, r_) - cavity_radius) / cavity_width))
       w(ixO^S, rho_) = max(w(ixO^S, rho_), rhomin) ! clip to floor value
 
-      ! Set rotational equilibrium
+      ! set azimuthal moment (rotational equilibrium)
+      pressure_term(ixI^S) = 0d0
+      pth(ixI^S) = 0d0
+      if (hd_energy) call mpistop("Can not use energy equation (not implemented).")
 
-      ! analytic pressure gradient (for barotropic case only, deprecated)
-      if (lisoth_eos) then
-         call hd_get_pthermal(w, x, ixI^L, ixI^L, pth)
-         call gradient(pth, ixI^L, ixO^L, r_, gradp_r)
-      else
-         tanh_term(ixO^S) = tanh(((x(ixO^S, r_) - cavity_radius) / cavity_width))
-         gradp_r(ixO^S) = 0.5d0*rho0*(rho_slope* x(ixO^S, r_)**(rho_slope-1.0d0) * (1.0d0 + tanh_term(ixO^S)) + x(ixO^S, r_)**(rho_slope) * (1.0d0 - tanh_term(ixO^S)**2) / cavity_width)
-         gradp_r(ixO^S) = hd_adiab * hd_gamma * w(ixO^S, rho_)**(hd_gamma-1.0d0) * gradp_r(ixO^S)
+      call hd_get_pthermal(w, x, ixI^L, ixI^L, pth)
+      call gradient(pth, ixI^L, ixO^L, r_, pressure_term)
+      pressure_term(ixO^S) = pressure_term(ixO^S) * x(ixO^S, r_) / w(ixO^S, rho_)
+      w(ixO^S, mom(phi_)) = w(ixO^S, rho_) * dsqrt(G*central_mass / x(ixO^S, r_) + pressure_term(ixO^S))
+
+      ! add perturbations to initial conditions
+      if (it == 0 .and. pert_amp > 0.0) then
+         call pert_random_noise(ixI^L, ixO^L, w, x, pert_moment, pert_amp)
       end if
-      pressure_term(ixO^S) = x(ixO^S, r_) * gradp_r(ixO^S) / w(ixO^S, rho_)
-
-      ! azimuthal velocity --------------------
-      w(ixO^S, mom(phi_)) = w(ixO^S, rho_) * dsqrt(G*central_mass / x(ixO^S,r_) + pressure_term(ixO^S))
 
       ! dust ----------------------------------
       !     we compute partial dust to gas fractions assuming the total
@@ -211,11 +201,6 @@ contains
             w(ixO^S, dust_mom(1, idust)) = 0d0
             call set_keplerian_angular_motion(ixI^L, ixO^L, w, x, dust_rho(idust), dust_mom(phi_, idust))
          end do
-      end if
-
-      ! add perturbations ---------------------
-      if (it == 0 .and. pert_noise) then
-         call pert_random_noise(ixI^L, ixO^L, w, x, pert_moment, pert_amp)
       end if
    end subroutine initial_conditions
 
@@ -255,14 +240,5 @@ contains
       w(ixO^S, mom(mflag)) = w(ixO^S, mom(mflag)) + amps(ixO^S) * exp(-(x(ixO^S, r_) - cavity_radius)**2 / (10*cavity_width**2))
    end subroutine pert_random_noise
 
-   !  unused (to be removed)
-   subroutine cst_bound(qt,ixG^L,ixB^L,iB,w,x)
-      use mod_disk_boundaries, only: constant_boundaries
-      integer, intent(in)             :: ixG^L, ixB^L, iB
-      double precision, intent(in)    :: qt, x(ixG^S,1:ndim)
-      double precision, intent(inout) :: w(ixG^S,1:nw)
-      call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,rho_)
-      call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,mom(phi_))
-   end subroutine cst_bound
 
 end module mod_usr
