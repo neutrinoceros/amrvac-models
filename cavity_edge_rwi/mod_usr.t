@@ -17,16 +17,14 @@ module mod_usr
     double precision :: unit_mass
 
     ! &usr_list
+    ! "pert" prefix stands for "perturbation"
     double precision :: rhomin, cavity_radius, cavity_width
-
-    ! &perturbation_list
-    logical :: pert_noise = .false.
-    integer :: pert_moment = 1
-    double precision :: pert_amp = one
+    integer :: pert_moment = 1  ! number of the moment w(:, pert_moment) to perturb
+    double precision :: pert_amp = 0d0  ! relative amplitude of perturbations to initial conditions
 
     ! &usr_dust_list
     ! custom dust parameters
-    double precision :: grain_density_gcm3 = one  ! (g/cm^3)
+    double precision :: grain_density_gcm3 = 1d0  ! (g/cm^3)
     double precision :: gas2dust_ratio = 1d2
     double precision, allocatable :: grain_size_cm(:)
 
@@ -41,8 +39,8 @@ contains
       call read_usr_parameters(par_files)
       ! Choose coordinate system according to user input at setup
       {^IFONED call set_coordinate_system("polar_1.5D")
-      if (pert_noise) &
-            call mpistop("Error: pert_noise=.true. is meant for ndim >= 2")
+      if (pert_amp .neq. 0d0) &
+            call mpistop("Error: perturbation is meant for ndim >= 2")
       }
       {^IFTWOD
          call set_coordinate_system("polar_2D")
@@ -77,7 +75,7 @@ contains
 
       namelist /usr_list/ &
            rhomin, cavity_radius, cavity_width, &
-           pert_noise, pert_moment, pert_amp
+           pert_moment, pert_amp
 
 
       do n = 1, size(files)
@@ -211,7 +209,7 @@ contains
       end if
 
       ! add perturbations ---------------------
-      if (it == 0 .and. pert_noise) then
+      if (it == 0 .and. pert_amp > 0.0) then
          call pert_random_noise(ixI^L, ixO^L, w, x, pert_moment, pert_amp)
       end if
    end subroutine initial_conditions
