@@ -151,7 +151,7 @@ contains
       double precision, intent(in)    :: x(ixI^S,1:ndim)
       double precision, intent(inout) :: w(ixI^S,1:nw)
 
-      double precision, dimension(ixI^S) :: gradp_r, pth, pressure_term, tanh_term
+      double precision, dimension(ixI^S) :: pth, pressure_term
       double precision :: dust2gas_frac0, sumfrac
       double precision :: partial_dust2gas_fracs(dust_n_species)
       integer :: idust = -1
@@ -165,12 +165,11 @@ contains
       ! Set rotational equilibrium
       pressure_term(ixI^S) = 0d0
       pth(ixI^S) = 0d0
-      gradp_r(ixI^S) = 0d0
       if (hd_energy) call mpistop("Can not use energy equation (not implemented).")
 
       call hd_get_pthermal(w, x, ixI^L, ixI^L, pth)
-      call gradient(pth, ixI^L, ixO^L, r_, gradp_r)
-      pressure_term(ixO^S) = x(ixO^S, r_) * gradp_r(ixO^S) / w(ixO^S, rho_)
+      call gradient(pth, ixI^L, ixO^L, r_, pressure_term)
+      pressure_term(ixO^S) = pressure_term(ixO^S) * x(ixO^S, r_) / w(ixO^S, rho_)
       w(ixO^S, mom(phi_)) = w(ixO^S, rho_) * dsqrt(G*central_mass / x(ixO^S,r_) + pressure_term(ixO^S))
 
       ! add perturbations to initial conditions
