@@ -167,10 +167,9 @@ contains
       double precision, dimension(ixI^S) :: gradp_r, pth, pressure_term
       double precision :: dust2gas_frac0, sumfrac
       double precision :: partial_dust2gas_fracs(dust_n_species)
-      integer n
+      integer :: idust  = -1
 
-      if (hd_energy) &
-      call mpistop("Can not use energy equation (not implemented).")
+      if (hd_energy) call mpistop("Can not use energy equation (not implemented).")
 
       ! proper init ---------------------------
       pressure_term(ixI^S) = 0d0
@@ -231,10 +230,10 @@ contains
             call mpistop("error in dust init: total dust2gas fraction does not match user parameter")
          end if
 
-         do n=1, dust_n_species
-            w(ixO^S, dust_rho(n)) = w(ixO^S, rho_) * partial_dust2gas_fracs(n)
-            w(ixO^S, dust_mom(1,n)) = 0d0
-            call set_keplerian_angular_motion(ixI^L, ixO^L, w, x, dust_rho(n), dust_mom(phi_, n))
+         do idust = 1, dust_n_species
+            w(ixO^S, dust_rho(idust)) = w(ixO^S, rho_) * partial_dust2gas_fracs(idust)
+            w(ixO^S, dust_mom(1, idust)) = 0d0
+            call set_keplerian_angular_motion(ixI^L, ixO^L, w, x, dust_rho(idust), dust_mom(phi_, idust))
          end do
       end if
 
