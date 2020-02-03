@@ -156,13 +156,14 @@ contains
       double precision :: partial_dust2gas_fracs(dust_n_species)
       integer :: idust = -1
 
-      ! proper init ---------------------------
-
+      ! init all fields to avoid uninitialized values
       w(ixI^S, 1:nw) = 0d0
+
+      ! init density
       w(ixI^S, rho_) = rho0 * x(ixI^S, r_)**rho_slope * 0.5d0 * (1d0 + tanh((x(ixI^S, r_) - cavity_radius) / cavity_width))
       w(ixO^S, rho_) = max(w(ixO^S, rho_), rhomin) ! clip to floor value
 
-      ! Set rotational equilibrium
+      ! set azimuthal moment (rotational equilibrium)
       pressure_term(ixI^S) = 0d0
       pth(ixI^S) = 0d0
       if (hd_energy) call mpistop("Can not use energy equation (not implemented).")
@@ -170,7 +171,7 @@ contains
       call hd_get_pthermal(w, x, ixI^L, ixI^L, pth)
       call gradient(pth, ixI^L, ixO^L, r_, pressure_term)
       pressure_term(ixO^S) = pressure_term(ixO^S) * x(ixO^S, r_) / w(ixO^S, rho_)
-      w(ixO^S, mom(phi_)) = w(ixO^S, rho_) * dsqrt(G*central_mass / x(ixO^S,r_) + pressure_term(ixO^S))
+      w(ixO^S, mom(phi_)) = w(ixO^S, rho_) * dsqrt(G*central_mass / x(ixO^S, r_) + pressure_term(ixO^S))
 
       ! add perturbations to initial conditions
       if (it == 0 .and. pert_amp > 0.0) then
