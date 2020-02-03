@@ -18,7 +18,6 @@ module mod_usr
 
   ! &usr_list
   double precision :: rhomin, cavity_radius, cavity_width
-  character(len=std_len) :: usr_geometry
   logical :: constant_pressure = .false. !useful for debuging
 
   ! &perturbation_list
@@ -47,19 +46,9 @@ contains
             call mpistop("Error: pert_noise=.true. is meant for ndim >= 2")
       }
       {^IFTWOD
-      select case(trim(usr_geometry))
-      case('rphi')
          call set_coordinate_system("polar_2D")
-      case('rz')
-         if (pert_noise) then
-            call mpistop("Error: pert_noise=.true. is not compatible with usr_geometry='rz'")
-         end if
-         call set_coordinate_system("cylindrical_2.5D")
-      case default
-         call mpistop("Error: usr_geometry is not set. Choose 'rz' or 'rphi'.")
-      end select
       }
-      {^IFTHREED call mpistop("3D case not implemented")}! set "cylindrical_3D" here
+      {^IFTHREED call mpistop("3D case not implemented")}
 
       ! A routine for initial conditions is always required
       usr_init_one_grid    => initial_conditions
@@ -88,7 +77,7 @@ contains
       character(len=*), intent(in) :: files(:)
       integer n
 
-      namelist /usr_list/ usr_geometry, rhomin, cavity_radius, cavity_width, constant_pressure
+      namelist /usr_list/ rhomin, cavity_radius, cavity_width, constant_pressure
 
       namelist /perturbation_list/ pert_noise, pert_moment, pert_amp
 
@@ -143,7 +132,6 @@ contains
          print*,'User messages ======================================='
          print*, 'G/4pi^2 = ', G/(4*dpi**2)
          print*, 'hd_adiab = ', hd_adiab
-         print*, 'usr_geometry = ', usr_geometry
 
          if (hd_dust) then
             print*, 'using ', dust_n_species, 'dust bins'
@@ -178,12 +166,6 @@ contains
 
       w(ixI^S, 1:nw) = 0.0d0
       w(ixI^S, rho_) = rho0 * x(ixI^S, r_)**rho_slope * 0.5d0 * (1d0 + tanh((x(ixI^S, r_) - cavity_radius) / cavity_width))
-
-      if (z_ > 0) then  ! vertical hydrostatic equilibrium
-         w(ixO^S, rho_) =  w(ixO^S, rho_) * exp(-x(ixO^S, z_)**2 / &
-         (2d0*aspect_ratio * x(ixO^S, r_))**2)
-      end if
-
       w(ixO^S, rho_) = max(w(ixO^S, rho_), rhomin) ! clip to floor value
 
       ! Set rotational equilibrium
@@ -193,26 +175,14 @@ contains
          call hd_get_pthermal(w, x, ixI^L, ixI^L, pth)
          call gradient(pth, ixI^L, ixO^L, r_, gradp_r)
       else
-         tanh_term(ixO^S) = tanh(((x(ixO^S, r_) - cavity_radius) / cavity_width))
+        tanh_term(ixO^S) = tanh(((x(ixO^S, r_) - cavity_radius) / cavity_width))
          gradp_r(ixO^S) = 0.5d0*rho0*(rho_slope* x(ixO^S, r_)**(rho_slope-1.0d0) * (1.0d0 + tanh_term(ixO^S)) + x(ixO^S, r_)**(rho_slope) * (1.0d0 - tanh_term(ixO^S)**2) / cavity_width)
          gradp_r(ixO^S) = hd_adiab * hd_gamma * w(ixO^S, rho_)**(hd_gamma-1.0d0) * gradp_r(ixO^S)
       end if
-
-      if (z_ > 0) then
-         ! this is analytic too
-         gradp_r(ixO^S) = gradp_r(ixO^S) * exp(-x(ixO^S, z_)**2 / &
-         (2d0*aspect_ratio * x(ixO^S, r_))**2)
-      end if
-
       pressure_term(ixO^S) = x(ixO^S, r_) * gradp_r(ixO^S) / w(ixO^S, rho_)
 
       ! azimuthal velocity --------------------
-      if (z_ > 0) then
-         w(ixO^S, mom(phi_)) = w(ixO^S, rho_) * dsqrt(G*central_mass * x(ixO^S, r_)**2 / (x(ixO^S, r_)**2 + x(ixO^S, z_)**2)**1.5d0 &
-         + pressure_term(ixO^S))
-      else
-         w(ixO^S, mom(phi_)) = w(ixO^S, rho_) * dsqrt(G*central_mass / x(ixO^S,r_) + pressure_term(ixO^S))
-      end if
+      w(ixO^S, mom(phi_)) = w(ixO^S, rho_) * dsqrt(G*central_mass / x(ixO^S,r_) + pressure_term(ixO^S))
 
       ! dust ----------------------------------
       !     we compute partial dust to gas fractions assuming the total

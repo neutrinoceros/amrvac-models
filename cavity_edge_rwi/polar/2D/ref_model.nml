@@ -12,7 +12,6 @@
 ! lists specific to this mod_usr.t
 
 &usr_list
-    usr_geometry = 'rphi'
     cavity_radius = 1.57   ! in 100au, with d=157pc (Gaia 2016) and angular width ~2''
     cavity_width = 0.12   ! 100au, constrained by Rayleigh and Lovelace criteria
     rhomin = 1e-13
