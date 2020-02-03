@@ -241,7 +241,7 @@ contains
       noise(ixO^S) = noise(ixO^S) * random_factor(ixO^S)
 
       ! spatially localize the effect
-      noise(ixO^S) = noise(ixO^S) * exp(-(x(ixO^S, r_) - cavity_radius)**2 / (10*cavity_width**2))
+      noise(ixO^S) = noise(ixO^S) * exp(-(x(ixO^S, r_) - cavity_radius)**2 / (2*cavity_width**2))
 
       ! application
       w(ixO^S, mom(mflag)) = w(ixO^S, mom(mflag)) + noise(ixO^S) 
