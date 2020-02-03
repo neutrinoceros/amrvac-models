@@ -5,31 +5,31 @@
 
 module mod_usr
 
-      use mod_hd
-      use mod_constants
+    use mod_hd
+    use mod_constants
 
-  implicit none
-  ! conversion factors
-  double precision :: base_length_au = 1d2
-  double precision :: au2cm  = 1.49597870691d13 ! a.u. to cm         conversion factor
-  double precision :: msun2g = 1.988d33         ! solar mass to gram conversion factor
-  double precision :: yr2s   = 3.1536d7         ! year to seconds
-  double precision :: unit_mass
+    implicit none
+    ! conversion factors
+    double precision :: base_length_au = 1d2
+    double precision :: au2cm  = 1.49597870691d13 ! a.u. to cm         conversion factor
+    double precision :: msun2g = 1.988d33         ! solar mass to gram conversion factor
+    double precision :: yr2s   = 3.1536d7         ! year to seconds
+    double precision :: unit_mass
 
-  ! &usr_list
-  double precision :: rhomin, cavity_radius, cavity_width
-  logical :: constant_pressure = .false. !useful for debuging
+    ! &usr_list
+    double precision :: rhomin, cavity_radius, cavity_width
+    logical :: constant_pressure = .false. !useful for debuging
 
-  ! &perturbation_list
-  logical :: pert_noise = .false.
-  integer :: pert_moment = 1
-  double precision :: pert_amp = one
+    ! &perturbation_list
+    logical :: pert_noise = .false.
+    integer :: pert_moment = 1
+    double precision :: pert_amp = one
 
-  ! &usr_dust_list
-  ! custom dust parameters
-  double precision :: grain_density_gcm3 = one  ! (g/cm^3)
-  double precision :: gas2dust_ratio = 1d2
-  double precision, allocatable :: grain_size_cm(:)
+    ! &usr_dust_list
+    ! custom dust parameters
+    double precision :: grain_density_gcm3 = one  ! (g/cm^3)
+    double precision :: gas2dust_ratio = 1d2
+    double precision, allocatable :: grain_size_cm(:)
 
 contains
 
@@ -54,7 +54,6 @@ contains
       usr_init_one_grid    => initial_conditions
       usr_set_parameters   => parameters
       usr_process_adv_grid => wave_killing_parabolic
-      !usr_special_bc => cst_bound (unused, deprecated)
 
       ! Choose independent normalization units if using dimensionless variables.
       unit_mass    = msun2g ! NOT A STANDARD AMRVAC VARIABLE
@@ -255,14 +254,5 @@ contains
       w(ixO^S, mom(mflag)) = w(ixO^S, mom(mflag)) + amps(ixO^S) * exp(-(x(ixO^S, r_) - cavity_radius)**2 / (10*cavity_width**2))
    end subroutine pert_random_noise
 
-   !  unused (to be removed)
-   subroutine cst_bound(qt,ixG^L,ixB^L,iB,w,x)
-      use mod_disk_boundaries, only: constant_boundaries
-      integer, intent(in)             :: ixG^L, ixB^L, iB
-      double precision, intent(in)    :: qt, x(ixG^S,1:ndim)
-      double precision, intent(inout) :: w(ixG^S,1:nw)
-      call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,rho_)
-      call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,mom(phi_))
-   end subroutine cst_bound
 
 end module mod_usr
