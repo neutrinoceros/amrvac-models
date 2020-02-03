@@ -53,8 +53,8 @@ contains
       ! A routine for initial conditions is always required
       usr_init_one_grid    => initial_conditions
       usr_set_parameters   => parameters
-      usr_special_bc       => cst_bound
       usr_process_adv_grid => wave_killing_parabolic
+      !usr_special_bc => cst_bound (unused, deprecated)
 
       ! Choose independent normalization units if using dimensionless variables.
       unit_mass    = msun2g ! NOT A STANDARD AMRVAC VARIABLE
@@ -175,7 +175,7 @@ contains
          call hd_get_pthermal(w, x, ixI^L, ixI^L, pth)
          call gradient(pth, ixI^L, ixO^L, r_, gradp_r)
       else
-        tanh_term(ixO^S) = tanh(((x(ixO^S, r_) - cavity_radius) / cavity_width))
+         tanh_term(ixO^S) = tanh(((x(ixO^S, r_) - cavity_radius) / cavity_width))
          gradp_r(ixO^S) = 0.5d0*rho0*(rho_slope* x(ixO^S, r_)**(rho_slope-1.0d0) * (1.0d0 + tanh_term(ixO^S)) + x(ixO^S, r_)**(rho_slope) * (1.0d0 - tanh_term(ixO^S)**2) / cavity_width)
          gradp_r(ixO^S) = hd_adiab * hd_gamma * w(ixO^S, rho_)**(hd_gamma-1.0d0) * gradp_r(ixO^S)
       end if
@@ -216,20 +216,6 @@ contains
    end subroutine initial_conditions
 
 
-!     Boundaries
-!     ----------
-   subroutine cst_bound(qt,ixG^L,ixB^L,iB,w,x)
-      use mod_disk_boundaries, only: constant_boundaries
-!     embed a function defined in mod_disk_boundaries.t
-      integer, intent(in)             :: ixG^L, ixB^L, iB
-      double precision, intent(in)    :: qt, x(ixG^S,1:ndim)
-      double precision, intent(inout) :: w(ixG^S,1:nw)
-      call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,rho_)
-      call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,mom(phi_))
-!     if (z_ > 0) &
-!     call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,mom(z_))
-   end subroutine cst_bound
-
 !     Optional perturbations to the initial state
 !     ------------------------------------------
 
@@ -264,5 +250,15 @@ contains
 
       w(ixO^S, mom(mflag)) = w(ixO^S, mom(mflag)) + amps(ixO^S) * exp(-(x(ixO^S, r_) - cavity_radius)**2 / (10*cavity_width**2))
    end subroutine pert_random_noise
+
+   !  unused (to be removed)
+   subroutine cst_bound(qt,ixG^L,ixB^L,iB,w,x)
+      use mod_disk_boundaries, only: constant_boundaries
+      integer, intent(in)             :: ixG^L, ixB^L, iB
+      double precision, intent(in)    :: qt, x(ixG^S,1:ndim)
+      double precision, intent(inout) :: w(ixG^S,1:nw)
+      call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,rho_)
+      call constant_boundaries(qt,ixG^L,ixB^L,iB,w,x,mom(phi_))
+   end subroutine cst_bound
 
 end module mod_usr
