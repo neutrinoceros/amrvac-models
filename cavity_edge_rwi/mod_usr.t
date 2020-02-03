@@ -18,7 +18,6 @@ module mod_usr
 
     ! &usr_list
     double precision :: rhomin, cavity_radius, cavity_width
-    logical :: constant_pressure = .false. !useful for debuging
 
     ! &perturbation_list
     logical :: pert_noise = .false.
@@ -77,7 +76,7 @@ contains
       integer n
 
       namelist /usr_list/ &
-           rhomin, cavity_radius, cavity_width, constant_pressure, &
+           rhomin, cavity_radius, cavity_width, &
            pert_noise, pert_moment, pert_amp
 
 
