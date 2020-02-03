@@ -154,26 +154,29 @@ contains
       double precision, dimension(ixI^S) :: gradp_r, pth, pressure_term, tanh_term
       double precision :: dust2gas_frac0, sumfrac
       double precision :: partial_dust2gas_fracs(dust_n_species)
-      integer :: idust  = -1
-
-      if (hd_energy) call mpistop("Can not use energy equation (not implemented).")
+      integer :: idust = -1
 
       ! proper init ---------------------------
-      pressure_term(ixI^S) = 0d0
-      pth(ixI^S) = 0d0
-      gradp_r(ixI^S) = 0d0
 
-      w(ixI^S, 1:nw) = 0.0d0
+      w(ixI^S, 1:nw) = 0d0
       w(ixI^S, rho_) = rho0 * x(ixI^S, r_)**rho_slope * 0.5d0 * (1d0 + tanh((x(ixI^S, r_) - cavity_radius) / cavity_width))
       w(ixO^S, rho_) = max(w(ixO^S, rho_), rhomin) ! clip to floor value
 
       ! Set rotational equilibrium
+      pressure_term(ixI^S) = 0d0
+      pth(ixI^S) = 0d0
+      gradp_r(ixI^S) = 0d0
+      if (hd_energy) call mpistop("Can not use energy equation (not implemented).")
+
       call hd_get_pthermal(w, x, ixI^L, ixI^L, pth)
       call gradient(pth, ixI^L, ixO^L, r_, gradp_r)
       pressure_term(ixO^S) = x(ixO^S, r_) * gradp_r(ixO^S) / w(ixO^S, rho_)
-
-      ! azimuthal velocity --------------------
       w(ixO^S, mom(phi_)) = w(ixO^S, rho_) * dsqrt(G*central_mass / x(ixO^S,r_) + pressure_term(ixO^S))
+
+      ! add perturbations to initial conditions
+      if (it == 0 .and. pert_amp > 0.0) then
+         call pert_random_noise(ixI^L, ixO^L, w, x, pert_moment, pert_amp)
+      end if
 
       ! dust ----------------------------------
       !     we compute partial dust to gas fractions assuming the total
@@ -198,11 +201,6 @@ contains
             w(ixO^S, dust_mom(1, idust)) = 0d0
             call set_keplerian_angular_motion(ixI^L, ixO^L, w, x, dust_rho(idust), dust_mom(phi_, idust))
          end do
-      end if
-
-      ! add perturbations ---------------------
-      if (it == 0 .and. pert_amp > 0.0) then
-         call pert_random_noise(ixI^L, ixO^L, w, x, pert_moment, pert_amp)
       end if
    end subroutine initial_conditions
 
