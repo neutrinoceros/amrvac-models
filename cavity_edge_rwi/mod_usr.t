@@ -173,12 +173,11 @@ contains
       call mpistop("Can not use energy equation (not implemented).")
 
       ! proper init ---------------------------
-      pressure_term(ixO^S) = 0d0
-      pth(ixO^S) = 0d0
-      gradp_r(ixO^S) = 0d0
+      pressure_term(ixI^S) = 0d0
+      pth(ixI^S) = 0d0
+      gradp_r(ixI^S) = 0d0
 
-      w(ixO^S, 1:nw) = 0.0d0
-      ! nb: I init rho on the whole input (ixI) array to support later computation of gradients over ixO
+      w(ixI^S, 1:nw) = 0.0d0
       w(ixI^S, rho_) = rho0 * x(ixI^S, r_)**rho_slope * 0.5d0 * (1d0 + tanh((x(ixI^S, r_) - cavity_radius) / cavity_width))
 
       if (z_ > 0) then  ! vertical hydrostatic equilibrium
