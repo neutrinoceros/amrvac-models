@@ -128,8 +128,12 @@ contains
          end do
       end if
 
+      ! note: I'm forcing this value computationnaly to ensure it is always set with maximal precision
+      hd_gamma = 5d0/3d0
+
       if (mype==0) then
-         print*,'User messages ======================================='
+         print*,'mod_user messages ======================================='
+         print*, 'Warning : forcing hd_gamma = 5/3'
          print*, 'G/4pi^2 = ', G/(4*dpi**2)
          print*, 'hd_adiab = ', hd_adiab
 

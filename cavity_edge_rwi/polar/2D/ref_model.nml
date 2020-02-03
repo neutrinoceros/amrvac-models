@@ -50,8 +50,8 @@
 
 &boundlist
     nghostcells = 2
-    typeboundary_min1 = 'special', 'cont', 'special'
-    typeboundary_max1 = 'special', 'noinflow', 'special'
+    typeboundary_min1 = 3*'cont'
+    typeboundary_max1 = 3*'noinflow'
     typeboundary_min2 = 'periodic', 'periodic', 'periodic'
     typeboundary_max2 = 'periodic', 'periodic', 'periodic'
 /
@@ -61,7 +61,6 @@
 /
 
 &hd_list
-    hd_gamma = 1.666
     hd_adiab = 86.4
     hd_energy = .false.
     hd_gravity = .true.
