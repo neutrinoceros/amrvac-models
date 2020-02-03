@@ -157,75 +157,68 @@ contains
    subroutine initial_conditions(ixI^L, ixO^L, w, x)
       use mod_disk_phys, only: set_keplerian_angular_motion
       use mod_disk_parameters, only: rho_slope, rho0, aspect_ratio, temperature_exponent, central_mass, G, lisoth_eos
-      use mod_disk_phys, only: get_pthermal_lisoth
+      use mod_hd, only: hd_get_pthermal
 
       use mod_dust, only: dust_n_species, dust_rho, dust_mom, dust_size
       integer, intent(in)             :: ixI^L, ixO^L
       double precision, intent(in)    :: x(ixI^S,1:ndim)
       double precision, intent(inout) :: w(ixI^S,1:nw)
 
-      double precision :: tanh_term(ixI^S), gradp_r(ixI^S), pth(ixI^S), pressure_term(ixI^S)
+      double precision, dimension(ixI^S) :: gradp_r, pth, pressure_term, tanh_term
       double precision :: dust2gas_frac0, sumfrac
       double precision :: partial_dust2gas_fracs(dust_n_species)
-      integer n
+      integer :: idust  = -1
 
-      if (hd_energy) &
-      call mpistop("Can not use energy equation (not implemented).")
+      if (hd_energy) call mpistop("Can not use energy equation (not implemented).")
 
       ! proper init ---------------------------
-      w(ixO^S, 1:nw) = 0.0d0
-      ! nb: I init rho on the whole input (ixI) array to support later computation of gradients over ixO
+      pressure_term(ixI^S) = 0d0
+      pth(ixI^S) = 0d0
+      gradp_r(ixI^S) = 0d0
+
+      w(ixI^S, 1:nw) = 0.0d0
       w(ixI^S, rho_) = rho0 * x(ixI^S, r_)**rho_slope * 0.5d0 * (1d0 + tanh((x(ixI^S, r_) - cavity_radius) / cavity_width))
 
-      if (z_ > 0) then             !vertical hydrostatic equilibrium
+      if (z_ > 0) then  ! vertical hydrostatic equilibrium
          w(ixO^S, rho_) =  w(ixO^S, rho_) * exp(-x(ixO^S, z_)**2 / &
          (2d0*aspect_ratio * x(ixO^S, r_))**2)
       end if
 
       w(ixO^S, rho_) = max(w(ixO^S, rho_), rhomin) ! clip to floor value
 
-!     Set rotational equilibrium
-      tanh_term(ixO^S) = tanh(((x(ixO^S, r_) - cavity_radius) / &
-      cavity_width))
-!     compute the radial component of grad(P) (from grad(rho))
-      gradp_r(ixO^S) = 0.5d0*rho0*(rho_slope* &
-      x(ixO^S, r_)**(rho_slope-1.0d0) * (1.0d0 + tanh_term(ixO^S)) &
-      + x(ixO^S, r_)**(rho_slope) * (1.0d0 - tanh_term(ixO^S)**2) &
-      / cavity_width)
+      ! Set rotational equilibrium
+
+      ! analytic pressure gradient (for barotropic case only, deprecated)
+      if (lisoth_eos) then
+         call hd_get_pthermal(w, x, ixI^L, ixI^L, pth)
+         call gradient(pth, ixI^L, ixO^L, r_, gradp_r)
+      else
+         tanh_term(ixO^S) = tanh(((x(ixO^S, r_) - cavity_radius) / cavity_width))
+         gradp_r(ixO^S) = 0.5d0*rho0*(rho_slope* x(ixO^S, r_)**(rho_slope-1.0d0) * (1.0d0 + tanh_term(ixO^S)) + x(ixO^S, r_)**(rho_slope) * (1.0d0 - tanh_term(ixO^S)**2) / cavity_width)
+         gradp_r(ixO^S) = hd_adiab * hd_gamma * w(ixO^S, rho_)**(hd_gamma-1.0d0) * gradp_r(ixO^S)
+      end if
 
       if (z_ > 0) then
+         ! this is analytic too
          gradp_r(ixO^S) = gradp_r(ixO^S) * exp(-x(ixO^S, z_)**2 / &
          (2d0*aspect_ratio * x(ixO^S, r_))**2)
       end if
 
-      gradp_r(ixO^S) = hd_adiab * hd_gamma * w(ixO^S, rho_)**(hd_gamma-1.0d0) * gradp_r(ixO^S)
-
-      if (constant_pressure) gradp_r(ixO^S) = 0.0d0 !dbg
+      pressure_term(ixO^S) = x(ixO^S, r_) * gradp_r(ixO^S) / w(ixO^S, rho_)
 
       ! azimuthal velocity --------------------
       if (z_ > 0) then
-         w(ixO^S, mom(phi_)) = w(ixO^S, rho_) * dsqrt( &
-         + G*central_mass * x(ixO^S, r_)**2 &
-         / (x(ixO^S, r_)**2 + x(ixO^S, z_)**2)**1.5d0 &
-         + x(ixO^S, r_) / w(ixO^S, rho_) * gradp_r(ixO^S))
+         w(ixO^S, mom(phi_)) = w(ixO^S, rho_) * dsqrt(G*central_mass * x(ixO^S, r_)**2 / (x(ixO^S, r_)**2 + x(ixO^S, z_)**2)**1.5d0 &
+         + pressure_term(ixO^S))
       else
-         if (lisoth_eos) then
-            pressure_term(ixO^S) = 0d0
-            pth(ixO^S) = 0d0
-            call usr_set_pthermal(w, x, ixI^L, ixI^L, pth)
-            call gradient(pth, ixI^L, ixO^L, r_, pressure_term)
-            pressure_term(ixO^S) = x(ixO^S, r_) * pressure_term(ixO^S) / w(ixO^S, rho_)
-         else
-            pressure_term(ixO^S) = x(ixO^S, r_) / w(ixO^S, rho_) * gradp_r(ixO^S)
-         end if
          w(ixO^S, mom(phi_)) = w(ixO^S, rho_) * dsqrt(G*central_mass / x(ixO^S,r_) + pressure_term(ixO^S))
       end if
 
-! dust ----------------------------------
-!     we compute partial dust to gas fractions assuming the total
-!     fraction = 1/gas2dust_ratio and a size distribution of
-!     n(s) \proto s**-3.5 (standard collisional equilibriuum
-!     assumption from debris disks)
+      ! dust ----------------------------------
+      !     we compute partial dust to gas fractions assuming the total
+      !     fraction = 1/gas2dust_ratio and a size distribution of
+      !     n(s) \proto s**-3.5 (standard collisional equilibriuum
+      !     assumption from debris disks)
 
       if (hd_dust) then
          dust2gas_frac0 = 1.0d0 / gas2dust_ratio / sum((dust_size(:) / &
@@ -239,14 +232,14 @@ contains
             call mpistop("error in dust init: total dust2gas fraction does not match user parameter")
          end if
 
-         do n=1, dust_n_species
-            w(ixO^S, dust_rho(n)) = w(ixO^S, rho_) * partial_dust2gas_fracs(n)
-            w(ixO^S, dust_mom(1,n)) = 0d0
-            call set_keplerian_angular_motion(ixI^L, ixO^L, w, x, dust_rho(n), dust_mom(phi_, n))
+         do idust = 1, dust_n_species
+            w(ixO^S, dust_rho(idust)) = w(ixO^S, rho_) * partial_dust2gas_fracs(idust)
+            w(ixO^S, dust_mom(1, idust)) = 0d0
+            call set_keplerian_angular_motion(ixI^L, ixO^L, w, x, dust_rho(idust), dust_mom(phi_, idust))
          end do
       end if
 
-!     add perturbations ---------------------
+      ! add perturbations ---------------------
       if (it == 0 .and. pert_noise) then
          call pert_random_noise(ixI^L, ixO^L, w, x, pert_moment, pert_amp)
       end if
