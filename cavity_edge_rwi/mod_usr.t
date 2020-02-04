@@ -14,7 +14,6 @@ module mod_usr
     double precision :: au2cm  = 1.49597870691d13 ! a.u. to cm         conversion factor
     double precision :: msun2g = 1.988d33         ! solar mass to gram conversion factor
     double precision :: yr2s   = 3.1536d7         ! year to seconds
-    double precision :: unit_mass
 
     ! &usr_list
     ! "pert" prefix stands for "perturbation"
@@ -52,13 +51,13 @@ contains
       usr_set_parameters   => parameters
       usr_process_adv_grid => wave_killing_parabolic
 
-      ! Choose independent normalization units if using dimensionless variables.
-      unit_mass    = msun2g ! NOT A STANDARD AMRVAC VARIABLE
+      ! those normalization factors are only used to set up physical grain sizes
       unit_length  = base_length_au * au2cm ! 100au (cm)
-      unit_density = unit_mass / unit_length**2
+      unit_density = msun2g / unit_length**3
 
+      ! devnote: I think this one is completely useless
       ! orbital period at ref_radius (s)
-      unit_time = yr2s * central_mass**(-0.5) * (base_length_au*ref_radius)**3/2
+      ! unit_time = yr2s * central_mass**(-0.5) * (base_length_au*ref_radius)**3/2
 
       call hd_activate()
       call read_usr_dust_parameters(par_files)
@@ -108,18 +107,16 @@ contains
       use mod_dust, only: dust_n_species, dust_density, dust_size
       use mod_disk_parameters, only: G
       ! .. local ..
-      double precision :: norm_density
-      integer i
+      integer :: idust = -1
 
       ! dust ----------------------------------
-      norm_density = unit_mass / unit_length**3
       if (hd_dust) then
-         do i = 1, dust_n_species
+         do idust = 1, dust_n_species
             !(au2cm)**-1 is 1cm in code units
-            dust_size(i) = grain_size_cm(i) / unit_length
+            dust_size(idust) = grain_size_cm(idust) / unit_length
 
             !1g/cm^3 in code unit
-            dust_density(i) = grain_density_gcm3 / norm_density
+            dust_density(idust) = grain_density_gcm3 / unit_density
          end do
       end if
 
@@ -127,7 +124,7 @@ contains
       hd_gamma = 5d0/3d0
 
       if (mype==0) then
-         print*,'mod_user messages ===================================='
+         print*,'mod_usr messages ===================================='
          print*, 'Warning : forcing hd_gamma = 5/3'
          print*, 'G/4pi^2 = ', G/(4*dpi**2)
          print*, 'hd_adiab = ', hd_adiab
