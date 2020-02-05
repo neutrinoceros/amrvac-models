@@ -53,7 +53,7 @@
 /
 
 &filelist
-    base_filename = 'output_rphi'
+    base_filename = 'crwi'
 /
 
 &hd_list
@@ -77,7 +77,7 @@
 &methodlist
     small_density = 1e-15
     time_integrator = 'twostep'
-    flux_scheme = 20*'hll' ! hllc is "better" but doesn't work with dust
+    flux_scheme = 20*'hllc'
     limiter = 20*'koren'
     gradient_limiter = 20*'koren'
 /

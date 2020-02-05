@@ -1,0 +1,8 @@
+! this is the optimal block scheme I found for this problem with decent resolution
+&meshlist
+    refine_max_level = 1
+    domain_nx1 = 512
+    block_nx1 = 512
+    domain_nx2 = 2048
+    block_nx2 = 32
+/
