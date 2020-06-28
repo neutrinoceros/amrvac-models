@@ -38,7 +38,7 @@ contains
       call read_usr_parameters(par_files)
       ! Choose coordinate system according to user input at setup
       {^IFONED call set_coordinate_system("polar_1.5D")
-      if (pert_amp .neq. 0d0) &
+      if (abs(pert_amp) > 0d0) &
             call mpistop("Error: perturbation is meant for ndim >= 2")
       }
       {^IFTWOD
